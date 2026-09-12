@@ -24,7 +24,7 @@ plan: ../../book-manager-web-mvp-plan.md
 | 書籍 API クライアント | ✅ Google Books → OpenBD の実装済み。未検証 |
 | M2 / M3 の各ページ | 🟡 雛形のみ（TODO コメント付き） |
 | ビルド・型・lint | ✅ `npm run build` / `tsc --noEmit` / `eslint` すべて通過 |
-| git | 🟡 `main` で初期化のみ。未コミット |
+| git / GitHub | ✅ `main` で初回コミット済み。リモート: https://github.com/haino357/book_manager_web（private） |
 
 ---
 
@@ -195,11 +195,11 @@ Supabase プロジェクトに未接続のため、以下は実装済みだが�
 3. `npx supabase gen types typescript --linked > lib/types/database.ts` で仮型を上書き
 4. Supabase ダッシュボード > Authentication > URL Configuration に `http://localhost:3000/auth/callback` を登録
 5. `npm run dev` でプラン「Verification」の 1（認証）・2（静的ページ）を確認
-6. 初回コミット
-7. M2 着手（`/books/add` の ISBN 検索フォーム → `createUserBook` から）
+6. M2 着手（`/books/add` の ISBN 検索フォーム → `createUserBook` から）
 
 ---
 
 ## 更新履歴
 
-- **2026-09-12** — プロジェクトフォルダ作成。Next.js 16.3.5 初期化、shadcn/ui 導入、ディレクトリ構成・マイグレーション SQL・Supabase クライアント・認証画面・静的ページ・書籍 API クライアント・インポート変換の雛形を作成。`build` / `typecheck` / `lint` 通過を確認。git 初期化（未コミット）。
+- **2026-09-12** — プロジェクトフォルダ作成。Next.js 16.3.5 初期化、shadcn/ui 導入、ディレクトリ構成・マイグレーション SQL・Supabase クライアント・認証画面・静的ページ・書籍 API クライアント・インポート変換の雛形を作成。`build` / `typecheck` / `lint` 通過を確認。git 初期化。
+- **2026-09-12** — 初回コミット（`1ee8159`）。GitHub に `haino357/book_manager_web` を private で作成し `main` を push。
