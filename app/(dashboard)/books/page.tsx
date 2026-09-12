@@ -1,26 +1,23 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
+import { BookCover } from "@/components/books/book-cover";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BOOK_STATUSES, STATUS_LABELS } from "@/lib/books/schema";
 import { createClient } from "@/lib/supabase/server";
 import type { BookStatus } from "@/lib/types/enums";
 
 export const metadata: Metadata = { title: "蔵書" };
 
-const STATUS_TABS: { value: BookStatus; label: string }[] = [
-  { value: "wishlist", label: "欲しい本" },
-  { value: "unread", label: "積読" },
-  { value: "reading", label: "読書中" },
-  { value: "completed", label: "読了" },
-];
-
 /**
  * M2: 蔵書一覧（ステータスタブ）。
- * TODO: BookCard コンポーネント（components/books/）、タブ切替を searchParams に反映
+ * TODO(#7): BookCard コンポーネントへ切り出し、評価・日付の表示を追加
  */
 export default async function BooksPage({ searchParams }: PageProps<"/books">) {
   const params = await searchParams;
   const status = (
-    STATUS_TABS.some((t) => t.value === params.status) ? params.status : "reading"
+    BOOK_STATUSES.some((s) => s === params.status) ? params.status : "reading"
   ) as BookStatus;
 
   const supabase = await createClient();
@@ -32,29 +29,51 @@ export default async function BooksPage({ searchParams }: PageProps<"/books">) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">蔵書</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">蔵書</h1>
+        <Button asChild size="sm">
+          <Link href="/books/add">書籍を登録</Link>
+        </Button>
+      </div>
       <Tabs value={status}>
         <TabsList>
-          {STATUS_TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} asChild>
-              <a href={`/books?status=${t.value}`}>{t.label}</a>
+          {BOOK_STATUSES.map((s) => (
+            <TabsTrigger key={s} value={s} asChild>
+              <Link href={`/books?status=${s}`}>{STATUS_LABELS[s]}</Link>
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
 
       {!userBooks?.length ? (
-        <p className="text-muted-foreground">この状態の本はまだありません。</p>
+        <div className="space-y-3 rounded-lg border border-dashed p-8 text-center">
+          <p className="text-muted-foreground">
+            「{STATUS_LABELS[status]}」の本はまだありません。
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/books/add">書籍を登録する</Link>
+          </Button>
+        </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {userBooks.map((ub) => (
-            <li key={ub.id} className="rounded-lg border p-4">
-              <a href={`/books/${ub.id}`} className="font-medium hover:underline">
-                {ub.books?.title}
-              </a>
-              <p className="text-sm text-muted-foreground">
-                {ub.books?.authors?.join(", ")}
-              </p>
+            <li key={ub.id} className="flex gap-3 rounded-lg border p-3">
+              <BookCover
+                src={ub.books?.cover_url}
+                title={ub.books?.title ?? ""}
+                className="w-16"
+              />
+              <div className="min-w-0">
+                <Link
+                  href={`/books/${ub.id}`}
+                  className="line-clamp-2 font-medium leading-snug hover:underline"
+                >
+                  {ub.books?.title}
+                </Link>
+                <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                  {ub.books?.authors?.join(", ")}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
