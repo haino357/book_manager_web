@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const NAV = [
   { href: "/books", label: "蔵書" },
+  { href: "/books/search", label: "検索" },
   { href: "/books/add", label: "登録" },
   { href: "/dashboard", label: "統計" },
   { href: "/import", label: "インポート" },

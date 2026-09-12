@@ -5,7 +5,7 @@
  * 値を変える場合は `supabase/migrations` の check 制約も合わせて更新する。
  */
 export type BookStatus = "wishlist" | "unread" | "reading" | "completed";
-export type BookSource = "google_books" | "openbd" | "manual";
+export type BookSource = "google_books" | "openbd" | "ndl" | "manual";
 export type MemoType =
   | "note"
   | "quote"

@@ -4,13 +4,15 @@ import { useState } from "react";
 
 import { IsbnSearchForm } from "@/components/books/isbn-search-form";
 import { ManualBookForm } from "@/components/books/manual-book-form";
+import { SearchBox } from "@/components/books/search-box";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Tab = "isbn" | "manual";
+type Tab = "isbn" | "keyword" | "manual";
 
 /**
- * 「ISBN で検索」「手動で入力」の 2 タブ。
+ * 「ISBN で検索」「タイトル・著者で検索」「手動で入力」の 3 タブ。
  * ISBN 検索で見つからなかったときは、その ISBN を引き継いで手動タブへ切り替える。
+ * タイトル・著者検索は /books/search の一覧ページへ遷移する。
  */
 export function AddBook() {
   const [tab, setTab] = useState<Tab>("isbn");
@@ -25,10 +27,17 @@ export function AddBook() {
     <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
       <TabsList>
         <TabsTrigger value="isbn">ISBN で検索</TabsTrigger>
+        <TabsTrigger value="keyword">タイトル・著者で検索</TabsTrigger>
         <TabsTrigger value="manual">手動で入力</TabsTrigger>
       </TabsList>
       <TabsContent value="isbn" className="pt-4">
         <IsbnSearchForm onSwitchToManual={switchToManual} />
+      </TabsContent>
+      <TabsContent value="keyword" className="space-y-2 pt-4">
+        <SearchBox autoFocus />
+        <p className="text-xs text-muted-foreground">
+          Google Books（なければ NDL サーチ）から候補を一覧し、選んで登録します。
+        </p>
       </TabsContent>
       <TabsContent value="manual" className="pt-4">
         {/* key を変えて再マウントし、引き継いだ ISBN を defaultValues に反映する */}

@@ -48,12 +48,14 @@ app/
   (public)/privacy, support   ← 静的ページ（モバイル #37 / #40 用）
   (auth)/login, signup        ← 認証
   (dashboard)/books, import, dashboard ← 認証必須
-  api/books/search            ← Google Books / OpenBD プロキシ
+  (dashboard)/books/search    ← 自由記述検索の一覧（Google Books → NDL サーチ）
+  (dashboard)/books/add       ← ISBN 検索 / タイトル・著者検索 / 手動入力
+  api/books/search            ← Google Books / OpenBD プロキシ（ISBN）
   auth/callback               ← OAuth / メール確認コールバック
 components/ui                 ← shadcn/ui
 components/{books,memos,dashboard,auth}
 lib/supabase/{client,server,proxy}.ts
-lib/books/{google-books,openbd,search,types}.ts
+lib/books/{google-books,openbd,ndl,search,text-search,schema,types}.ts
 lib/import/mobile-export.ts   ← #24 JSON → v2 スキーマ変換
 lib/actions/                  ← Server Actions
 lib/types/database.ts         ← supabase gen types で生成
