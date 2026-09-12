@@ -173,10 +173,10 @@ Node から `@supabase/supabase-js` を使って、ローカル Supabase に対�
 | 未ログイン（anon）で `user_books` select | 0 行（RLS で遮断） |
 | `/` `/login` `/signup` | 200 |
 | `/books`（認証必須）未ログイン | 307 → `/login?next=/books` |
-| `/api/books/search` 未ログイン | 307 → `/login`（`PUBLIC_PATHS` 外のため） |
+| `/api/books/search` 未ログイン | 当初は 307 → `/login`。その後 proxy を修正し **401 JSON** を返す（`877e090`） |
 
-検証で作成したテストユーザー `dev-check-<timestamp>@example.com` と本棚 1 件がローカル DB に残っている。
-不要なら `npm run db:reset` で消える。
+検証で作成したテストユーザーがローカル DB に残っている（`dev-check-…` `browser-check-…` と、ブラウザ確認用の `test@example.com` / `Passw0rd!test`）。
+`test@example.com` の本棚には M2 の検証で登録した本が数冊入っている。まっさらにしたいときは `npm run db:reset`（seed 以外すべて消える）。
 
 ---
 
@@ -188,13 +188,35 @@ npm run db:start        # ローカル Supabase
 npm run dev             # http://localhost:3000
 ```
 
-終了時は `npx supabase stop`。マイグレーションを追加したら `npm run db:reset` → `npm run gen:types` → `npm run typecheck`。
+終了時は `npx supabase stop`。
+
+マイグレーションを追加したら次のどちらか。
+
+```bash
+npx supabase migration up   # データを残したまま未適用分だけ適用（00002 はこれで適用した）
+npm run db:reset            # 全部作り直し（データは消える）
+```
+
+その後 `npm run gen:types` → `npm run typecheck`（check 制約の変更だけなら生成型に差分は出ない）。
+
+### dev サーバーの注意
+
+- `.env.local` を変えたら `npm run dev` を再起動する
+- Turbopack が `lib/` 配下（`lib/books/*` など）の変更を拾わず、Route Handler / Server Component が古いコードで動き続けることがあった。挙動が変わらないときは `npm run dev` を再起動する
+- 起動中に別の端末から `npm run dev` すると `EADDRINUSE :3000` になる。`lsof -nP -iTCP:3000 -sTCP:LISTEN` で確認して止める
 
 ---
 
-## 未検証・残作業
+## その後の進み（2026-09-12 時点）
+
+環境構築後、同日に M2 の書籍登録・自由記述検索・書影補完まで実装した。詳細は `docs/PROGRESS.md` と Issue #5 #6 #20 を参照。
+
+- 済: `/api/books/search` の実データ取得（正しい ISBN はリーダブルコード `9784873115658`。seed の誤りは修正済み）
+- 済: `/books` `/books/[id]` の表示確認、`docs/PROGRESS.md` の更新
+- 済: `00002_books_source_ndl.sql` をローカルに `migration up` で適用
+
+## 残作業
 
 - Google OAuth ログイン（ローカルのプロバイダ設定が未実施）
-- `/api/books/search` の実データ取得（ログイン後に ISBN `9784873119694` で確認予定）
-- `/books` `/books/[id]` の関連テーブル取得クエリのブラウザ上での確認
-- `docs/PROGRESS.md` の「Supabase 未適用 / 未検証」記述の更新
+- `GOOGLE_BOOKS_API_KEY` の取得と `.env.local` への設定（キー無しだと Google Books は 429 で、NDL サーチにフォールバックしている）
+- ブラウザでの `/books/add` `/books/search` の操作確認
