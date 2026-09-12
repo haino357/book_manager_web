@@ -69,3 +69,7 @@ supabase/migrations/00001_init.sql
 | M2 | 蔵書 + メモ（ISBN 検索・一覧・詳細・6 種別メモ・/import） | 未着手 |
 | M3 | 評価 + 統計 | 未着手 |
 | M4 | 公開（Vercel・Cloudflare・Sentry） | 未着手 |
+
+## License
+
+[MIT](./LICENSE)
