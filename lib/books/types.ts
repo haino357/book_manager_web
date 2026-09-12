@@ -1,4 +1,4 @@
-import type { BookSource } from "@/lib/types/database";
+import type { BookSource } from "@/lib/types/enums";
 
 /** 外部 API から取得した書籍メタデータ（books テーブルに保存する前の共通形） */
 export type BookMetadata = {

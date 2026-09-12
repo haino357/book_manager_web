@@ -1,238 +1,373 @@
-/**
- * Supabase の DB 型定義。
- *
- * 本番では次のコマンドで自動生成して上書きする（手書きの内容は初期プレースホルダー）:
- *   npm run gen:types
- *
- * 00001_init.sql のスキーマと手動で同期している。
- */
 export type Json =
   | string
   | number
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
-
-export type BookStatus = "wishlist" | "unread" | "reading" | "completed";
-export type BookSource = "google_books" | "openbd" | "manual";
-export type MemoType =
-  | "note"
-  | "quote"
-  | "summary"
-  | "review"
-  | "vocabulary"
-  | "action";
+  | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          username: string | null;
-          display_name: string | null;
-          avatar_url: string | null;
-          is_public: boolean | null;
-          yearly_goal: number | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id: string;
-          username?: string | null;
-          display_name?: string | null;
-          avatar_url?: string | null;
-          is_public?: boolean | null;
-          yearly_goal?: number | null;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          username?: string | null;
-          display_name?: string | null;
-          avatar_url?: string | null;
-          is_public?: boolean | null;
-          yearly_goal?: number | null;
-          created_at?: string | null;
-        };
-        Relationships: [];
-      };
-      books: {
-        Row: {
-          id: string;
-          isbn13: string | null;
-          isbn10: string | null;
-          title: string;
-          authors: string[] | null;
-          publisher: string | null;
-          published_date: string | null;
-          cover_url: string | null;
-          description: string | null;
-          categories: string[] | null;
-          source: BookSource | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          isbn13?: string | null;
-          isbn10?: string | null;
-          title: string;
-          authors?: string[] | null;
-          publisher?: string | null;
-          published_date?: string | null;
-          cover_url?: string | null;
-          description?: string | null;
-          categories?: string[] | null;
-          source?: BookSource | null;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          isbn13?: string | null;
-          isbn10?: string | null;
-          title?: string;
-          authors?: string[] | null;
-          publisher?: string | null;
-          published_date?: string | null;
-          cover_url?: string | null;
-          description?: string | null;
-          categories?: string[] | null;
-          source?: BookSource | null;
-          created_at?: string | null;
-        };
-        Relationships: [];
-      };
-      user_books: {
-        Row: {
-          id: string;
-          user_id: string;
-          book_id: string;
-          status: BookStatus;
-          rating: number | null;
-          started_at: string | null;
-          completed_at: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          book_id: string;
-          status: BookStatus;
-          rating?: number | null;
-          started_at?: string | null;
-          completed_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          book_id?: string;
-          status?: BookStatus;
-          rating?: number | null;
-          started_at?: string | null;
-          completed_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "user_books_book_id_fkey";
-            columns: ["book_id"];
-            isOneToOne: false;
-            referencedRelation: "books";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      reading_histories: {
-        Row: {
-          id: string;
-          user_book_id: string;
-          started_at: string | null;
-          completed_at: string | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_book_id: string;
-          started_at?: string | null;
-          completed_at?: string | null;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_book_id?: string;
-          started_at?: string | null;
-          completed_at?: string | null;
-          created_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "reading_histories_user_book_id_fkey";
-            columns: ["user_book_id"];
-            isOneToOne: false;
-            referencedRelation: "user_books";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       book_memos: {
         Row: {
-          id: string;
-          user_book_id: string;
-          type: MemoType;
-          content: string;
-          page: number | null;
-          section: string | null;
-          is_completed: boolean | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
+          content: string
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          page: number | null
+          section: string | null
+          type: string
+          updated_at: string | null
+          user_book_id: string
+        }
         Insert: {
-          id?: string;
-          user_book_id: string;
-          type: MemoType;
-          content: string;
-          page?: number | null;
-          section?: string | null;
-          is_completed?: boolean | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
+          content: string
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          page?: number | null
+          section?: string | null
+          type: string
+          updated_at?: string | null
+          user_book_id: string
+        }
         Update: {
-          id?: string;
-          user_book_id?: string;
-          type?: MemoType;
-          content?: string;
-          page?: number | null;
-          section?: string | null;
-          is_completed?: boolean | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          page?: number | null
+          section?: string | null
+          type?: string
+          updated_at?: string | null
+          user_book_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "book_memos_user_book_id_fkey";
-            columns: ["user_book_id"];
-            isOneToOne: false;
-            referencedRelation: "user_books";
-            referencedColumns: ["id"];
+            foreignKeyName: "book_memos_user_book_id_fkey"
+            columns: ["user_book_id"]
+            isOneToOne: false
+            referencedRelation: "user_books"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-};
+        ]
+      }
+      books: {
+        Row: {
+          authors: string[] | null
+          categories: string[] | null
+          cover_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          isbn10: string | null
+          isbn13: string | null
+          published_date: string | null
+          publisher: string | null
+          source: string | null
+          title: string
+        }
+        Insert: {
+          authors?: string[] | null
+          categories?: string[] | null
+          cover_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          isbn10?: string | null
+          isbn13?: string | null
+          published_date?: string | null
+          publisher?: string | null
+          source?: string | null
+          title: string
+        }
+        Update: {
+          authors?: string[] | null
+          categories?: string[] | null
+          cover_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          isbn10?: string | null
+          isbn13?: string | null
+          published_date?: string | null
+          publisher?: string | null
+          source?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          is_public: boolean | null
+          username: string | null
+          yearly_goal: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          is_public?: boolean | null
+          username?: string | null
+          yearly_goal?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          is_public?: boolean | null
+          username?: string | null
+          yearly_goal?: number | null
+        }
+        Relationships: []
+      }
+      reading_histories: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          started_at: string | null
+          user_book_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          started_at?: string | null
+          user_book_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          started_at?: string | null
+          user_book_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_histories_user_book_id_fkey"
+            columns: ["user_book_id"]
+            isOneToOne: false
+            referencedRelation: "user_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_books: {
+        Row: {
+          book_id: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          rating: number | null
+          started_at: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          started_at?: string | null
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_books_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
-export type Tables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Row"];
-export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Insert"];
-export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Update"];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const
+

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { BookStatus, MemoType } from "@/lib/types/database";
+import type { BookStatus, MemoType } from "@/lib/types/enums";
 
 /**
  * モバイル haino357/book_manager Issue #24 のエクスポート JSON → v2 スキーマ変換。

@@ -18,12 +18,13 @@ plan: ../../book-manager-web-mvp-plan.md
 |---|---|
 | プロジェクト初期化 | ✅ 完了（Next.js 16.3.5 / TypeScript / Tailwind v4 / shadcn/ui） |
 | ディレクトリ構成 | ✅ プランの「プロジェクト構成」どおりに作成 |
-| DB スキーマ・RLS | ✅ SQL 作成済み。**Supabase への適用は未実施** |
-| 認証（Email + Google） | ✅ 画面・Server Action・コールバック作成済み。**Supabase プロジェクト未接続のため未検証** |
+| DB スキーマ・RLS | ✅ ローカル Supabase に適用済み。RLS の通過/遮断を確認。**クラウドへの適用は未実施** |
+| 認証（Email + Google） | ✅ Email サインアップ・`profiles` 自動作成・未ログインリダイレクトをローカルで検証済み。**Google OAuth は未設定・未検証** |
 | 静的ページ `/privacy` `/support` | ✅ 骨子作成済み。文面・連絡先は TODO |
 | 書籍 API クライアント | ✅ Google Books → OpenBD の実装済み。未検証 |
 | M2 / M3 の各ページ | 🟡 雛形のみ（TODO コメント付き） |
-| ビルド・型・lint | ✅ `npm run build` / `tsc --noEmit` / `eslint` すべて通過 |
+| ビルド・型・lint | ✅ `npm run build` / `tsc --noEmit` / `eslint` すべて通過（`gen:types` 生成物に対しても通過） |
+| ローカル開発環境 | ✅ Docker Desktop + Supabase CLI で起動・検証済み。手順は `docs/LOCAL_DEV_SETUP.md` |
 | git / GitHub | ✅ `main` で初回コミット済み。リモート: https://github.com/haino357/book_manager_web（private） |
 
 ---
@@ -68,11 +69,11 @@ plan: ../../book-manager-web-mvp-plan.md
 
 | プランの項目 | 状態 | 備考 |
 |---|---|---|
-| Supabase プロジェクト作成、CLI セットアップ | 🟡 | CLI 導入・`supabase init` 済み。**クラウド側のプロジェクト作成・`link` は未実施** |
+| Supabase プロジェクト作成、CLI セットアップ | 🟡 | CLI 導入・`supabase init`・**ローカル Supabase 起動済み**（`npm run db:start`）。クラウド側のプロジェクト作成・`link` は未実施 |
 | Next.js 16 初期化（TS + Tailwind v4） | ✅ | `create-next-app@latest`、`--no-src-dir`、import alias `@/*` |
 | shadcn/ui 初期化、基本コンポーネント取得 | ✅ | button, card, input, label, textarea, tabs, badge, select, dialog, dropdown-menu, progress, separator, sonner, skeleton の 14 個。`form` は新 CLI で提供されず未取得 |
-| `00001_init.sql` 適用、`supabase gen types` | 🟡 | SQL は作成済み。**適用と型生成は未実施**。`lib/types/database.ts` は SQL と手動同期した仮の型 |
-| `proxy.ts` に Auth セッション更新、ログイン・サインアップ画面 | ✅ | 実装済み。Supabase 未接続のため動作未検証 |
+| `00001_init.sql` 適用、`supabase gen types` | ✅ | ローカルに適用し `npm run gen:types` で `lib/types/database.ts` を生成。手書きのリテラル型は `lib/types/enums.ts` に分離 |
+| `proxy.ts` に Auth セッション更新、ログイン・サインアップ画面 | ✅ | ローカルで検証済み（`/books` 未ログイン → `/login?next=/books`、サインアップ → 即セッション発行） |
 | `/privacy` `/support` 公開 → #37/#40 に URL 記載 | 🟡 | ページは作成済み。デプロイと URL 記載は M4 以降 |
 
 ### M2：蔵書 + メモ
@@ -143,19 +144,21 @@ book_manager_web/
 │   ├── actions/auth.ts               ✅ signIn / signUp / Google / signOut
 │   ├── actions/books.ts              ⬜ 設計コメントのみ
 │   ├── actions/memos.ts              ⬜ 設計コメントのみ
-│   ├── types/database.ts             🟡 手書きの仮型。gen types で上書き予定
+│   ├── types/database.ts             ✅ `npm run gen:types` の生成物（手編集しない）
+│   ├── types/enums.ts                ✅ BookStatus / BookSource / MemoType（check 制約と対応）
 │   └── utils.ts                      ✅ shadcn 生成
 ├── proxy.ts                          ✅ Next.js 16（旧 middleware）
 ├── supabase/
-│   ├── config.toml                   ✅ supabase init
+│   ├── config.toml                   ✅ supabase init。site_url / redirect を localhost:3000 に修正
 │   ├── migrations/00001_init.sql     ✅ 5 テーブル + トリガー + インデックス + RLS
 │   └── seed.sql                      ✅ 書籍マスター 2 冊
-├── .env.local                        🟡 空の値。要記入（git 管理外）
+├── .env.local                        ✅ ローカル Supabase の値を設定済み（git 管理外）
 ├── .env.local.example                ✅
 ├── CLAUDE.md                         ✅ 規約。@AGENTS.md を参照
 ├── AGENTS.md                         ✅ next dev が自動生成する Next.js 16 ガイド
 ├── README.md                         ✅ セットアップ手順
-└── docs/PROGRESS.md                  ✅ 本ファイル
+├── docs/PROGRESS.md                  ✅ 本ファイル
+└── docs/LOCAL_DEV_SETUP.md           ✅ Docker + ローカル Supabase のセットアップ手順と検証記録
 ```
 
 ---
@@ -171,31 +174,37 @@ book_manager_web/
 | ステータス一覧のデフォルトタブ | `reading` |
 | 認証リダイレクト | ログイン済みで `/login` `/signup` に来たら `/books` へ。未ログインで認証必須ページに来たら `/login?next=...` へ |
 | `.gitignore` | `.env*` を無視しつつ `.env.local.example` は追跡。`supabase/.temp` `supabase/.branches` を無視 |
+| リテラル型の置き場所 | DB は enum ではなく `check` 制約のため `gen types` の `Enums` は空になる。`BookStatus` / `BookSource` / `MemoType` は `lib/types/enums.ts` に置き、`lib/types/database.ts` は手編集しない |
+| `config.toml` の Auth URL | 初期値 `127.0.0.1:3000` をアプリの `NEXT_PUBLIC_SITE_URL`（`localhost:3000`）に揃え、`additional_redirect_urls` に `/auth/callback` を追加 |
 | `lib/import/mobile-export.ts` | モバイルの sqflite 構造から推定した暫定スキーマ。status の enum index は `0: unread, 1: reading, 2: completed`、memo type は `note, quote, summary, review, vocabulary, action` の順と仮定 |
 
 ---
 
-## 未検証事項
+## 検証済み / 未検証
 
-Supabase プロジェクトに未接続のため、以下は実装済みだが動作確認していない。
+### ローカル Supabase で検証済み（2026-09-12）
 
-- Email サインアップ → 確認メール → ログイン
-- Google OAuth ログイン（プロバイダ設定・Redirect URL 登録が必要）
-- `proxy.ts` のセッション更新とリダイレクト
-- `00001_init.sql` の適用（構文・RLS の挙動）
-- `/api/books/search` の実データ取得（ISBN `9784873119694` で確認予定）
-- `/books` `/books/[id]` のクエリ（Supabase の関連テーブル取得）
+- Email サインアップ → 即セッション発行（ローカルは `enable_confirmations = false`）
+- `auth.users` insert 時の `profiles` 自動作成トリガー
+- `00001_init.sql` の適用、seed 2 冊の読み取り
+- RLS：ログインユーザーの `user_books` insert 通過、anon の `user_books` select は 0 行
+- `proxy.ts`：`/` `/login` `/signup` は 200、`/books` `/api/books/search` 未ログインは `/login` へ 307
+
+### 未検証
+
+- Google OAuth ログイン（ローカル・クラウドともプロバイダ未設定）
+- メール確認リンク経由のログイン（クラウドでは `enable_confirmations` が有効になる）
+- `/api/books/search` の実データ取得（ログイン後に ISBN `9784873119694` で確認予定）
+- `/books` `/books/[id]` のブラウザ上での表示（関連テーブル取得クエリ）
 
 ---
 
 ## 次にやること
 
-1. Supabase プロジェクト作成 → `.env.local` に URL / anon key を記入
-2. `npx supabase link --project-ref <ref>` → `npm run db:push`
-3. `npx supabase gen types typescript --linked > lib/types/database.ts` で仮型を上書き
-4. Supabase ダッシュボード > Authentication > URL Configuration に `http://localhost:3000/auth/callback` を登録
-5. `npm run dev` でプラン「Verification」の 1（認証）・2（静的ページ）を確認
-6. M2 着手（`/books/add` の ISBN 検索フォーム → `createUserBook` から）
+1. ブラウザで `/signup` → `/books` の一連の流れと `/api/books/search` を確認（プラン「Verification」の 1・2）
+2. M2 着手（`/books/add` の ISBN 検索フォーム → `createUserBook` から）
+3. クラウド Supabase プロジェクト作成 → `npx supabase link` → `npm run db:push`（M4 のデプロイ前まででよい）
+4. Google OAuth のプロバイダ設定（ローカルは `config.toml` の `[auth.external.google]`、クラウドはダッシュボード）
 
 ---
 
@@ -203,3 +212,4 @@ Supabase プロジェクトに未接続のため、以下は実装済みだが�
 
 - **2026-09-12** — プロジェクトフォルダ作成。Next.js 16.3.5 初期化、shadcn/ui 導入、ディレクトリ構成・マイグレーション SQL・Supabase クライアント・認証画面・静的ページ・書籍 API クライアント・インポート変換の雛形を作成。`build` / `typecheck` / `lint` 通過を確認。git 初期化。
 - **2026-09-12** — 初回コミット（`1ee8159`）。GitHub に `haino357/book_manager_web` を private で作成し `main` を push。
+- **2026-09-12** — ローカル開発環境を構築。Docker Desktop 起動確認 → `npm run db:start` でローカル Supabase 起動（マイグレーション・seed 適用）→ `.env.local` をローカル値に設定 → `config.toml` の Auth URL を `localhost:3000` に修正 → `npm run gen:types` で型生成し、手書きリテラル型を `lib/types/enums.ts` に分離。`typecheck` / `lint` 通過。Email サインアップ・`profiles` トリガー・RLS・未ログインリダイレクトを検証。手順を `docs/LOCAL_DEV_SETUP.md` に記録。

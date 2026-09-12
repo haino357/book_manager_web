@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
-import type { BookStatus } from "@/lib/types/database";
+import type { BookStatus } from "@/lib/types/enums";
 
 export const metadata: Metadata = { title: "蔵書" };
 
