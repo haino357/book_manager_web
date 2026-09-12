@@ -21,8 +21,10 @@ plan: ../../book-manager-web-mvp-plan.md
 | DB スキーマ・RLS | ✅ ローカル Supabase に適用済み。RLS の通過/遮断を確認。**クラウドへの適用は未実施** |
 | 認証（Email + Google） | ✅ Email サインアップ・`profiles` 自動作成・未ログインリダイレクトをローカルで検証済み。**Google OAuth は未設定・未検証** |
 | 静的ページ `/privacy` `/support` | ✅ 骨子作成済み。文面・連絡先は TODO |
-| 書籍 API クライアント | ✅ Google Books → OpenBD の実装済み。未検証 |
-| M2 / M3 の各ページ | 🟡 雛形のみ（TODO コメント付き） |
+| 書籍 API クライアント | ✅ 実データで検証済み（OpenBD 系）。Google Books はキー無しだと 429 になりやすく、フォールバックで動く |
+| M2 書籍登録 | ✅ `/books/add`（ISBN 検索 + タイトル・著者検索 + 手動入力）と `createUserBook` を実装・検証済み（#5 #6） |
+| M2 自由記述検索 | ✅ `/books/search?q=` 一覧ページ。Google Books → 429 なら NDL サーチ + OpenBD 補完。書影が無い本は Google 書影配信で補完。登録済みバッジ付き |
+| M2 一覧・詳細・メモ / M3 | 🟡 一覧は書影付き最小表示。詳細・メモ・ステータス遷移・統計は雛形 |
 | ビルド・型・lint | ✅ `npm run build` / `tsc --noEmit` / `eslint` すべて通過（`gen:types` 生成物に対しても通過） |
 | ローカル開発環境 | ✅ Docker Desktop + Supabase CLI で起動・検証済み。手順は `docs/LOCAL_DEV_SETUP.md` |
 | git / GitHub | ✅ `main` で初回コミット済み。リモート: https://github.com/haino357/book_manager_web（private） |
@@ -80,11 +82,12 @@ plan: ../../book-manager-web-mvp-plan.md
 
 | プランの項目 | 状態 | 備考 |
 |---|---|---|
-| Google Books / OpenBD クライアント、`/api/books/search` BFF | ✅ | 実装済み。認証必須。未検証 |
-| `/books/add` ISBN 検索 + 手動入力フォーム | ⬜ | ページ雛形のみ |
-| `/books` 一覧（4 ステータスタブ） | 🟡 | タブと最小の一覧表示まで。BookCard 未作成 |
+| Google Books / OpenBD クライアント、`/api/books/search` BFF | ✅ | 実データで検証。未ログインは 401（proxy で `/api/` はリダイレクトしない）。OpenBD の著者名解析を ONIX Contributor ベースに修正 |
+| `/books/add` ISBN 検索 + 手動入力フォーム | ✅ | 3 タブ（ISBN / タイトル・著者 / 手動）。ISBN 検索 → プレビュー（書影・著者・出版社・カテゴリ）→ ステータス選択 → 登録。見つからなければ ISBN を引き継いで手動タブへ。手動は RHF + Zod、ISBN 無し可 |
+| 自由記述検索 `/books/search`（プラン外・モバイル #7 相当） | ✅ | 検索欄は `/books/add` タブとヘッダーナビ「検索」から。結果カードでステータスを選んでそのまま登録。`books.source` に `ndl` を追加（`00002`） |
+| `/books` 一覧（4 ステータスタブ） | 🟡 | タブ + 書影付き最小一覧、空状態から `/books/add` への導線。BookCard への切り出しは #7 |
 | `/books/[id]` 詳細、6 種別メモ CRUD、action 完了トグル | 🟡 | 詳細の取得と表示のみ。メモ UI 未作成 |
-| ステータス遷移 UI（日付自動セット、`reading_histories` 追加） | ⬜ | `lib/actions/books.ts` に設計コメントのみ |
+| ステータス遷移 UI（日付自動セット、`reading_histories` 追加） | 🟡 | 登録時のみ実装: `reading` → `started_at` = 今日（JST）、`completed` → `completed_at` = 今日。遷移 UI と `reading_histories` は #9 |
 | `/import`：#24 JSON → v2 スキーマ変換 | 🟡 | 変換ロジック（`lib/import/mobile-export.ts`）は暫定形で実装済み。UI と投入処理は未作成 |
 
 ### M3：評価 + 統計
@@ -119,8 +122,9 @@ book_manager_web/
 │   │   └── signup/page.tsx           ✅
 │   ├── (dashboard)/
 │   │   ├── layout.tsx                ✅ 認証チェック、ナビ、ログアウト
-│   │   ├── books/page.tsx            🟡 ステータスタブ + 最小一覧
-│   │   ├── books/add/page.tsx        ⬜ 雛形
+│   │   ├── books/page.tsx            🟡 ステータスタブ + 書影付き最小一覧 + 登録導線
+│   │   ├── books/add/page.tsx        ✅ AddBook（ISBN / タイトル・著者 / 手動入力タブ）
+│   │   ├── books/search/page.tsx     ✅ 自由記述検索の一覧（RSC。searchBooksByText + 登録済み照合）
 │   │   ├── books/[id]/page.tsx       🟡 取得・表示のみ
 │   │   ├── import/page.tsx           ⬜ 雛形
 │   │   └── dashboard/page.tsx        ⬜ 雛形
@@ -129,7 +133,13 @@ book_manager_web/
 ├── components/
 │   ├── ui/                           ✅ shadcn/ui 14 個
 │   ├── auth/auth-form.tsx            ✅ login / signup 共用フォーム（useActionState）
-│   ├── books/.gitkeep                ⬜
+│   ├── books/add-book.tsx            ✅ 2 タブの親。検索失敗 → ISBN を引き継いで手動へ
+│   ├── books/isbn-search-form.tsx    ✅ /api/books/search → プレビュー → createUserBook
+│   ├── books/manual-book-form.tsx    ✅ React Hook Form + Zod（manualBookFormSchema）
+│   ├── books/status-select.tsx       ✅ 4 ステータスの Select
+│   ├── books/book-cover.tsx          ✅ 書影（外部 URL をそのまま <img>、無ければプレースホルダー）
+│   ├── books/search-box.tsx          ✅ GET /books/search?q= の素の form（Server Component から使える）
+│   ├── books/search-result-card.tsx  ✅ 結果 1 件 + StatusSelect + 登録 / 登録済みリンク
 │   ├── memos/.gitkeep                ⬜
 │   └── dashboard/.gitkeep            ⬜
 ├── lib/
@@ -138,11 +148,15 @@ book_manager_web/
 │   ├── supabase/proxy.ts             ✅ updateSession + 未ログインリダイレクト（PUBLIC_PATHS）
 │   ├── books/types.ts                ✅ BookMetadata、ISBN 正規化・10→13 変換
 │   ├── books/google-books.ts         ✅ 優先。categories 取得、http→https
-│   ├── books/openbd.ts               ✅ 補完。pubdate 整形、著者の役割表記除去
-│   ├── books/search.ts               ✅ Google → OpenBD の取得戦略
+│   ├── books/openbd.ts               ✅ 補完。ONIX ベースの著者整形、複数 ISBN 一括取得（fetchManyFromOpenBd）
+│   ├── books/ndl.ts                  ✅ NDL サーチ OpenSearch（title → creator → any、RSS を正規表現で解析）
+│   ├── books/text-search.ts          ✅ 自由記述検索の取得戦略（Google → NDL + OpenBD 補完、重複排除）
+│   ├── books/search.ts               ✅ Google → OpenBD の取得戦略 + 書影が無ければ Google 書影配信
+│   ├── books/google-cover.ts         ✅ ISBN → Google 書影配信 URL。プレースホルダー画像をハッシュで除外、並列 8 で補完
+│   ├── books/schema.ts               ✅ Zod: bookMetadataSchema / createUserBookSchema / manualBookFormSchema、STATUS_LABELS、toPostgresDate
 │   ├── import/mobile-export.ts       🟡 Zod スキーマ + ImportPlan 変換（#24 確定待ち）
 │   ├── actions/auth.ts               ✅ signIn / signUp / Google / signOut
-│   ├── actions/books.ts              ⬜ 設計コメントのみ
+│   ├── actions/books.ts              🟡 createUserBook 実装済み。updateStatus / updateRating は #9 / #11
 │   ├── actions/memos.ts              ⬜ 設計コメントのみ
 │   ├── types/database.ts             ✅ `npm run gen:types` の生成物（手編集しない）
 │   ├── types/enums.ts                ✅ BookStatus / BookSource / MemoType（check 制約と対応）
@@ -151,7 +165,8 @@ book_manager_web/
 ├── supabase/
 │   ├── config.toml                   ✅ supabase init。site_url / redirect を localhost:3000 に修正
 │   ├── migrations/00001_init.sql     ✅ 5 テーブル + トリガー + インデックス + RLS
-│   └── seed.sql                      ✅ 書籍マスター 2 冊
+│   ├── migrations/00002_books_source_ndl.sql ✅ books.source の check に 'ndl' を追加
+│   └── seed.sql                      ✅ 書籍マスター 2 冊（ISBN を実在のものに修正済み）
 ├── .env.local                        ✅ ローカル Supabase の値を設定済み（git 管理外）
 ├── .env.local.example                ✅
 ├── CLAUDE.md                         ✅ 規約。@AGENTS.md を参照
@@ -176,6 +191,20 @@ book_manager_web/
 | `.gitignore` | `.env*` を無視しつつ `.env.local.example` は追跡。`supabase/.temp` `supabase/.branches` を無視 |
 | リテラル型の置き場所 | DB は enum ではなく `check` 制約のため `gen types` の `Enums` は空になる。`BookStatus` / `BookSource` / `MemoType` は `lib/types/enums.ts` に置き、`lib/types/database.ts` は手編集しない |
 | `config.toml` の Auth URL | 初期値 `127.0.0.1:3000` をアプリの `NEXT_PUBLIC_SITE_URL`（`localhost:3000`）に揃え、`additional_redirect_urls` に `/auth/callback` を追加 |
+| 書籍の重複排除 | `books` に update ポリシーが無いため upsert は使わず、`isbn13` で select → 無ければ insert（23505 なら再 select）。既存行のメタデータは更新しない。`isbn13` NULL は常に insert |
+| 登録済み判定 | `user_books` の `unique (user_id, book_id)` 違反（23505）は「すでに登録されています」+ 既存 `/books/[id]` へのリンクとして返す |
+| 書影の表示 | ホストが Google Books / OpenBD / 手動入力で不定なので `next/image` は使わず `<img>`（`BookCover`）。`no-img-element` はその行だけ無効化 |
+| Zod スキーマの置き場所 | `"use server"` ファイルは async 関数しか export できないため `lib/books/schema.ts` に置く |
+| `published_date` | Google Books / OpenBD は `YYYY` `YYYY-MM` を返すことがあるので `toPostgresDate` で月日を 01 に補完して date 列へ |
+| Google Books のクォータ | キー無しの共有クォータは 429（Queries per day 超過）になりやすい。OpenBD へフォールバックするので動くが、書影・カテゴリが欠ける。`GOOGLE_BOOKS_API_KEY` の設定を推奨 |
+| OpenBD の著者名 | NDL 系データは `"渋川,よしき 辻,大志郎,1990-"`（人物はスペース、姓名・生年はカンマ）で従来のカンマ分割が壊れていた。ONIX `Contributor.PersonName` を優先し、`姓, 名, 生年-` → `姓名`（欧文は `名 姓`）に整形 |
+| seed の ISBN | リーダブルコードは `9784873115658`、良いコード/悪いコードは `9784297127831` が正。旧 seed の ISBN は別の本（実用Go言語 / プロを目指す人のための TypeScript 入門）だった |
+| 自由記述検索のソース | OpenBD にキーワード検索は無く、Google Books はキー無しだと 429 になるため、キー不要の NDL サーチ OpenSearch をフォールバックに採用。NDL は書影を返さないので OpenBD の複数 ISBN 取得で補完。`any` は関連度が低いので `title` と `creator` を並行して投げ、両方 0 件のときだけ `any` |
+| 書影の補完 | Google Books API（クォータあり）とは別に、`books.google.com/books/content?vid=ISBN…` は API クォータを消費せず書影を返す。存在しない ISBN でも 200 で「画像なし」画像（1269B、sha256 先頭 `e3f8c414b288cbdf`）が返るため、サーバー側で取得してハッシュと 2KB 未満のサイズで除外し、本物だけ `coverUrl` に採用。起動後 1 回、実在しない ISBN を取ってプレースホルダーのハッシュを実測し差し替えに追従。NDL サーチの書影 API はサーバーからは 403 |
+| NDL の XML 解析 | 依存を増やさず正規表現で `<item>` 内のタグを抜く（タグは入れ子にならない）。ISBN は `xsi:type="dcndl:ISBN"` の `dc:identifier`、件名は型無しの `dc:subject` |
+| 検索欄の置き場所 | 検索欄は GET form（`SearchBox`）で `/books/add` のタブとヘッダー「検索」に置き、結果は `/books/search?q=` の RSC ページで描画。URL 共有・戻る操作が自然になる |
+| dev サーバーと `lib/` の変更 | Turbopack が `lib/books/*` の変更を拾わないことがあった。Route Handler / RSC の挙動が古いままなら `npm run dev` を再起動する |
+| `/api/` の未ログイン | proxy で `/login` にリダイレクトせず 401 JSON を返す（fetch 側で扱いやすくする） |
 | `lib/import/mobile-export.ts` | モバイルの sqflite 構造から推定した暫定スキーマ。status の enum index は `0: unread, 1: reading, 2: completed`、memo type は `note, quote, summary, review, vocabulary, action` の順と仮定 |
 
 ---
@@ -188,23 +217,30 @@ book_manager_web/
 - `auth.users` insert 時の `profiles` 自動作成トリガー
 - `00001_init.sql` の適用、seed 2 冊の読み取り
 - RLS：ログインユーザーの `user_books` insert 通過、anon の `user_books` select は 0 行
-- `proxy.ts`：`/` `/login` `/signup` は 200、`/books` `/api/books/search` 未ログインは `/login` へ 307
+- `proxy.ts`：`/` `/login` `/signup` は 200、`/books` 未ログインは `/login` へ 307、`/api/books/search` 未ログインは 401
+- `/api/books/search`：`9784873115658`（リーダブルコード）・ISBN-10 `4873115655`・ハイフン付きで取得、存在しない ISBN は 404。Google Books は 429 で OpenBD にフォールバック
+- `createUserBook`（Server Action を HTTP で直接呼び出し）：既存 `books` 行の再利用、同じ本の再登録エラー + 既存 id、新規 ISBN 登録（`published_date` 2022-04 → 2022-04-01）、ISBN 無し 2 冊の連続登録、タイトル空・不正ステータスのバリデーション
+- `/books?status=…` に登録した本が書影付きで並び、`/books/[id]` が 200、不明 id は 404
+- 書影補完：ISBN 検索 2 件と「リーダブルコード」1 件で Google 書影 URL が付与、「Clean Architecture」20 件中 17 件に書影（残りは ISBN 無しかプレースホルダー判定）。20 件で約 2 秒
+- `/books/search`：「リーダブルコード」1 件（登録済みバッジ）、「仙塲大也」2 件、「Clean Architecture」20 件、無意味語 0 件。Google 429 時の注記表示、結果カードからの登録（source=ndl）→ 詳細へ遷移、再検索で登録済みに変わる。未ログインは `/login` へ
 
 ### 未検証
 
 - Google OAuth ログイン（ローカル・クラウドともプロバイダ未設定）
 - メール確認リンク経由のログイン（クラウドでは `enable_confirmations` が有効になる）
-- `/api/books/search` の実データ取得（ログイン後に ISBN `9784873119694` で確認予定）
-- `/books` `/books/[id]` のブラウザ上での表示（関連テーブル取得クエリ）
+- `GOOGLE_BOOKS_API_KEY` を設定した状態での Google Books 取得（categories・書影）
+- `/books/add` `/books/search` のブラウザ操作（ISBN 検索 → プレビュー → 登録、手動タブへの引き継ぎ、検索結果からの登録）
+- Google Books が使える状態での自由記述検索（書影・カテゴリ付きの結果、NDL との切り替え）
 
 ---
 
 ## 次にやること
 
-1. ブラウザで `/signup` → `/books` の一連の流れと `/api/books/search` を確認（プラン「Verification」の 1・2）
-2. M2 着手（`/books/add` の ISBN 検索フォーム → `createUserBook` から）
-3. クラウド Supabase プロジェクト作成 → `npx supabase link` → `npm run db:push`（M4 のデプロイ前まででよい）
-4. Google OAuth のプロバイダ設定（ローカルは `config.toml` の `[auth.external.google]`、クラウドはダッシュボード）
+1. ブラウザで `/books/add` と `/books/search` を確認し、#5 #6 をクローズ。クラウド適用時は `00002` も `db:push`
+2. `GOOGLE_BOOKS_API_KEY` を取得して `.env.local` に設定（書影・カテゴリ取得のため）
+3. M2 続き: #7 BookCard、#8 詳細・メモ CRUD、#9 ステータス遷移
+4. クラウド Supabase プロジェクト作成 → `npx supabase link` → `npm run db:push`（M4 のデプロイ前まででよい）
+5. Google OAuth のプロバイダ設定（ローカルは `config.toml` の `[auth.external.google]`、クラウドはダッシュボード）
 
 ---
 
@@ -213,3 +249,6 @@ book_manager_web/
 - **2026-09-12** — プロジェクトフォルダ作成。Next.js 16.3.5 初期化、shadcn/ui 導入、ディレクトリ構成・マイグレーション SQL・Supabase クライアント・認証画面・静的ページ・書籍 API クライアント・インポート変換の雛形を作成。`build` / `typecheck` / `lint` 通過を確認。git 初期化。
 - **2026-09-12** — 初回コミット（`1ee8159`）。GitHub に `haino357/book_manager_web` を private で作成し `main` を push。
 - **2026-09-12** — ローカル開発環境を構築。Docker Desktop 起動確認 → `npm run db:start` でローカル Supabase 起動（マイグレーション・seed 適用）→ `.env.local` をローカル値に設定 → `config.toml` の Auth URL を `localhost:3000` に修正 → `npm run gen:types` で型生成し、手書きリテラル型を `lib/types/enums.ts` に分離。`typecheck` / `lint` 通過。Email サインアップ・`profiles` トリガー・RLS・未ログインリダイレクトを検証。手順を `docs/LOCAL_DEV_SETUP.md` に記録。
+- **2026-09-12** — M2 書籍検索・登録を実装（#5 #6）。`lib/books/schema.ts`（Zod）、`lib/actions/books.ts` の `createUserBook`、`components/books/{add-book,isbn-search-form,manual-book-form,status-select,book-cover}.tsx`、`/books/add` ページ、`/books` 一覧の書影と登録導線。OpenBD の著者名解析を ONIX ベースに修正、`/api/` 未ログインを 401 に変更、seed の ISBN を実在のものに修正。Server Action を HTTP で直接呼んで登録・重複・ISBN 無し・バリデーションを検証、`typecheck` / `lint` 通過。
+- **2026-09-12** — 自由記述検索を追加。`/books/search?q=` の一覧ページ（`SearchBox` / `SearchResultCard`）、`lib/books/text-search.ts`（Google Books → NDL サーチ + OpenBD 書影補完）、`lib/books/ndl.ts`、`google-books.ts` にキーワード検索と 429 検出、`openbd.ts` に複数 ISBN 取得。`/books/add` に「タイトル・著者で検索」タブ、ヘッダーに「検索」。`00002_books_source_ndl.sql` で `books.source` に `ndl` を追加しローカル適用。CLAUDE.md / README の記述を更新。
+- **2026-09-12** — 書影の補完を追加。`lib/books/google-cover.ts`（Google 書影配信 URL、プレースホルダーをハッシュ判定で除外、並列補完）を `text-search.ts` と `search.ts` に組み込み。NDL 経由の検索結果と OpenBD に書影が無い ISBN 検索でも書影が出るようになった。CLAUDE.md の書影規約を更新。

@@ -1,4 +1,5 @@
 import { GoogleBooksQuotaError, searchGoogleBooksByKeyword } from "./google-books";
+import { fillMissingCovers } from "./google-cover";
 import { searchNdlByKeyword } from "./ndl";
 import { fetchManyFromOpenBd } from "./openbd";
 import type { BookMetadata } from "./types";
@@ -45,7 +46,9 @@ export async function searchBooksByText(
     }
   }
 
-  return { items: dedupe(items), provider, googleQuotaExceeded };
+  // 書影が無い本は Google の書影配信（API クォータ外）で補完する
+  const withCovers = await fillMissingCovers(dedupe(items));
+  return { items: withCovers, provider, googleQuotaExceeded };
 }
 
 /** NDL の結果に OpenBD の書影・説明を足す。OpenBD に無いものはそのまま */
