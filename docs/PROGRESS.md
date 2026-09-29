@@ -85,7 +85,7 @@ plan: ../../book-manager-web-mvp-plan.md
 | Google Books / OpenBD クライアント、`/api/books/search` BFF | ✅ | 実データで検証。未ログインは 401（proxy で `/api/` はリダイレクトしない）。OpenBD の著者名解析を ONIX Contributor ベースに修正 |
 | `/books/add` ISBN 検索 + 手動入力フォーム | ✅ | 3 タブ（ISBN / タイトル・著者 / 手動）。ISBN 検索 → プレビュー（書影・著者・出版社・カテゴリ）→ ステータス選択 → 登録。見つからなければ ISBN を引き継いで手動タブへ。手動は RHF + Zod、ISBN 無し可 |
 | 自由記述検索 `/books/search`（プラン外・モバイル #7 相当、Web #20） | ✅ | 検索欄は `/books/add` タブとヘッダーナビ「検索」から。結果カードでステータスを選んでそのまま登録。`books.source` に `ndl` を追加（`00002`） |
-| `/books` 一覧（4 ステータスタブ） | 🟡 | タブ + 書影付き最小一覧、空状態から `/books/add` への導線。BookCard への切り出しは #7 |
+| `/books` 一覧（4 ステータスタブ） | ✅ | `BookCard`（書影・タイトル・著者・★評価の表示・ステータスバッジ・開始/読了日）、タブの件数表示、空状態から `/books/add` への導線、`loading.tsx` + `Skeleton`。ページは `books/(list)/` に置き、スケルトンが詳細などに出ないようにした（#7）。★の編集は #11 |
 | `/books/[id]` 詳細、6 種別メモ CRUD、action 完了トグル | 🟡 | 詳細の取得と表示のみ。メモ UI 未作成 |
 | ステータス遷移 UI（日付自動セット、`reading_histories` 追加） | 🟡 | 登録時のみ実装: `reading` → `started_at` = 今日（JST）、`completed` → `completed_at` = 今日。遷移 UI と `reading_histories` は #9 |
 | `/import`：#24 JSON → v2 スキーマ変換 | 🟡 | 変換ロジック（`lib/import/mobile-export.ts`）は暫定形で実装済み。UI と投入処理は未作成 |

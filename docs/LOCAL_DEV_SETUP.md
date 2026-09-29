@@ -182,6 +182,8 @@ Node から `@supabase/supabase-js` を使って、ローカル Supabase に対�
 
 ## 日常の起動手順（まとめ）
 
+最新の手順は `docs/LOCAL_RUN.md` にまとめている。
+
 ```bash
 open -a Docker          # Docker Desktop が起動していなければ
 npm run db:start        # ローカル Supabase

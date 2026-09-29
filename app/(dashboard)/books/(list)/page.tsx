@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { BookCover } from "@/components/books/book-cover";
+import { BookCard } from "@/components/books/book-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BOOK_STATUSES, STATUS_LABELS } from "@/lib/books/schema";
@@ -11,8 +11,8 @@ import type { BookStatus } from "@/lib/types/enums";
 export const metadata: Metadata = { title: "蔵書" };
 
 /**
- * M2: 蔵書一覧（ステータスタブ）。
- * TODO(#7): BookCard コンポーネントへ切り出し、評価・日付の表示を追加
+ * M2: 蔵書一覧（ステータスタブ + 件数）。
+ * `(list)` ルートグループに置き、loading.tsx のスケルトンを /books/[id] などに波及させない。
  */
 export default async function BooksPage({ searchParams }: PageProps<"/books">) {
   const params = await searchParams;
@@ -21,11 +21,21 @@ export default async function BooksPage({ searchParams }: PageProps<"/books">) {
   ) as BookStatus;
 
   const supabase = await createClient();
-  const { data: userBooks } = await supabase
-    .from("user_books")
-    .select("id, status, rating, started_at, completed_at, books(title, authors, cover_url)")
-    .eq("status", status)
-    .order("updated_at", { ascending: false });
+  const [{ data: userBooks }, { data: statusRows }] = await Promise.all([
+    supabase
+      .from("user_books")
+      .select("id, status, rating, started_at, completed_at, books(title, authors, cover_url)")
+      .eq("status", status)
+      .order("updated_at", { ascending: false }),
+    // タブの件数。個人の蔵書規模なら status 列だけ全件取って数えれば足りる
+    supabase.from("user_books").select("status"),
+  ]);
+
+  const counts = Object.fromEntries(BOOK_STATUSES.map((s) => [s, 0])) as Record<
+    BookStatus,
+    number
+  >;
+  for (const row of statusRows ?? []) counts[row.status as BookStatus]++;
 
   return (
     <div className="space-y-6">
@@ -39,7 +49,10 @@ export default async function BooksPage({ searchParams }: PageProps<"/books">) {
         <TabsList>
           {BOOK_STATUSES.map((s) => (
             <TabsTrigger key={s} value={s} asChild>
-              <Link href={`/books?status=${s}`}>{STATUS_LABELS[s]}</Link>
+              <Link href={`/books?status=${s}`}>
+                {STATUS_LABELS[s]}
+                <span className="text-xs tabular-nums text-muted-foreground">{counts[s]}</span>
+              </Link>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -57,24 +70,15 @@ export default async function BooksPage({ searchParams }: PageProps<"/books">) {
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {userBooks.map((ub) => (
-            <li key={ub.id} className="flex gap-3 rounded-lg border p-3">
-              <BookCover
-                src={ub.books?.cover_url}
-                title={ub.books?.title ?? ""}
-                className="w-16"
-              />
-              <div className="min-w-0">
-                <Link
-                  href={`/books/${ub.id}`}
-                  className="line-clamp-2 font-medium leading-snug hover:underline"
-                >
-                  {ub.books?.title}
-                </Link>
-                <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
-                  {ub.books?.authors?.join(", ")}
-                </p>
-              </div>
-            </li>
+            <BookCard
+              key={ub.id}
+              userBookId={ub.id}
+              status={ub.status as BookStatus}
+              rating={ub.rating}
+              startedAt={ub.started_at}
+              completedAt={ub.completed_at}
+              book={ub.books}
+            />
           ))}
         </ul>
       )}
