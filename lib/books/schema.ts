@@ -85,6 +85,14 @@ export const createUserBookSchema = z.object({
   status: bookStatusSchema,
 });
 
+/** user_books.rating（1〜5）。null は未評価 */
+export const ratingSchema = z.number().int().min(1).max(5).nullable();
+
+export const updateRatingSchema = z.object({
+  userBookId: z.string().uuid(),
+  rating: ratingSchema,
+});
+
 export type CreateUserBookInput = z.infer<typeof createUserBookSchema>;
 
 export const updateStatusSchema = z.object({

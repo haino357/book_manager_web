@@ -24,7 +24,7 @@ type Props = {
 /**
  * 蔵書一覧の 1 冊。書影・タイトル・著者・★評価・ステータス・読書日付。
  * ステータスはカード上のセレクトから直接変更できる（日付の自動セットは updateStatus）。
- * 評価の編集は詳細画面（#11 の RatingStars）で行い、ここでは表示のみ。
+ * 評価の編集は詳細画面（RatingStars）で行い、ここでは表示のみ。
  */
 export function BookCard({ userBookId, status, rating, startedAt, completedAt, book }: Props) {
   const title = book?.title ?? "（タイトル不明）";
