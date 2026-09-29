@@ -16,7 +16,7 @@ export type TextSearchResult = {
  * 自由記述（タイトル・著者など）で書籍を探す。
  *
  * 取得戦略: Google Books（書影・カテゴリが取れる）→ 429 または 0 件なら NDL サーチ。
- * NDL は書影を返さないので、ISBN があるものは OpenBD でまとめて書影・説明を補完する。
+ * どちらの結果も、ISBN があるものは OpenBD でまとめて補完する（NDL の書影・説明、Google の定価・ページ数）。
  * 結果は isbn13 で重複排除する（ISBN 無しはタイトル+著者で判定）。
  */
 export async function searchBooksByText(
@@ -32,7 +32,10 @@ export async function searchBooksByText(
 
   try {
     items = await searchGoogleBooksByKeyword(q, maxResults);
-    if (items.length) provider = "google_books";
+    if (items.length) {
+      provider = "google_books";
+      items = await enrichWithOpenBd(items);
+    }
   } catch (e) {
     if (e instanceof GoogleBooksQuotaError) googleQuotaExceeded = true;
     // それ以外のネットワークエラーもフォールバックへ
@@ -51,7 +54,7 @@ export async function searchBooksByText(
   return { items: withCovers, provider, googleQuotaExceeded };
 }
 
-/** NDL の結果に OpenBD の書影・説明を足す。OpenBD に無いものはそのまま */
+/** OpenBD の書影・説明・ページ数・定価で足りない項目を埋める。OpenBD に無いものはそのまま */
 async function enrichWithOpenBd(items: BookMetadata[]): Promise<BookMetadata[]> {
   const isbns = items.map((b) => b.isbn13).filter((s): s is string => !!s);
   if (isbns.length === 0) return items;
@@ -68,6 +71,8 @@ async function enrichWithOpenBd(items: BookMetadata[]): Promise<BookMetadata[]> 
       description: b.description ?? o.description,
       publisher: b.publisher ?? o.publisher,
       publishedDate: b.publishedDate ?? o.publishedDate,
+      pageCount: b.pageCount ?? o.pageCount,
+      listPrice: b.listPrice ?? o.listPrice,
     };
   });
 }

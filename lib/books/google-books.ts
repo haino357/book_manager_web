@@ -12,6 +12,7 @@ type VolumeInfo = {
   categories?: string[];
   industryIdentifiers?: { type: string; identifier: string }[];
   imageLinks?: { thumbnail?: string; smallThumbnail?: string };
+  pageCount?: number;
 };
 
 type VolumesResponse = {
@@ -67,6 +68,9 @@ function mapVolume(info: VolumeInfo | undefined, fallbackIsbn13: string | null =
     coverUrl: cover ? cover.replace(/^http:\/\//, "https://") : null,
     description: info.description ?? null,
     categories: info.categories ?? [],
+    pageCount: info.pageCount && info.pageCount > 0 ? info.pageCount : null,
+    // saleInfo.listPrice は税込で、日本の本はほぼ入っていない。税抜で揃えるため定価は OpenBD / NDL から取る
+    listPrice: null,
     source: "google_books",
   };
 }

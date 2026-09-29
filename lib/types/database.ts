@@ -88,6 +88,8 @@ export type Database = {
           id: string
           isbn10: string | null
           isbn13: string | null
+          list_price: number | null
+          page_count: number | null
           published_date: string | null
           publisher: string | null
           source: string | null
@@ -102,6 +104,8 @@ export type Database = {
           id?: string
           isbn10?: string | null
           isbn13?: string | null
+          list_price?: number | null
+          page_count?: number | null
           published_date?: string | null
           publisher?: string | null
           source?: string | null
@@ -116,6 +120,8 @@ export type Database = {
           id?: string
           isbn10?: string | null
           isbn13?: string | null
+          list_price?: number | null
+          page_count?: number | null
           published_date?: string | null
           publisher?: string | null
           source?: string | null
@@ -191,6 +197,7 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           id: string
+          price_paid: number | null
           rating: number | null
           started_at: string | null
           status: string
@@ -202,6 +209,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          price_paid?: number | null
           rating?: number | null
           started_at?: string | null
           status: string
@@ -213,6 +221,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          price_paid?: number | null
           rating?: number | null
           started_at?: string | null
           status?: string
@@ -234,7 +243,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      fill_book_details: {
+        Args: {
+          p_book_id: string
+          p_list_price?: number
+          p_page_count?: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

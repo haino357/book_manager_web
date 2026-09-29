@@ -8,6 +8,9 @@ import {
   readingDatesFormSchema,
   toPostgresDate,
   updateStatusSchema,
+  bookDetailsFormSchema,
+  toIntOrNull,
+  type BookDetailsFormValues,
   type CreateUserBookInput,
   type ReadingDatesFormValues,
 } from "@/lib/books/schema";
@@ -34,6 +37,7 @@ export type ActionResult = { error?: string };
  * 4. revalidatePath("/books") → /books/[id] へ遷移
  *
  * books には update ポリシーが無いため、既存行のメタデータ（書影など）は更新しない。
+ * ページ数・定価だけは、既存行で空なら fill_book_details で埋める（統計用。#24 #25）。
  */
 export async function createUserBook(
   input: CreateUserBookInput,
@@ -77,6 +81,8 @@ export async function createUserBook(
         cover_url: metadata.coverUrl,
         description: metadata.description,
         categories: metadata.categories,
+        page_count: metadata.pageCount,
+        list_price: metadata.listPrice,
         source: metadata.source,
       })
       .select("id")
@@ -126,6 +132,17 @@ export async function createUserBook(
       };
     }
     return { error: `登録に失敗しました: ${ubError.message}` };
+  }
+
+  // 既存の books 行を再利用した場合、空のページ数・定価を今回の検索結果で埋める。
+  // fill_book_details は自分の本棚にある本だけ更新するので、user_books の insert 後に呼ぶ
+  if (metadata.pageCount != null || metadata.listPrice != null) {
+    const { error: fillError } = await supabase.rpc("fill_book_details", {
+      p_book_id: bookId,
+      p_page_count: metadata.pageCount ?? undefined,
+      p_list_price: metadata.listPrice ?? undefined,
+    });
+    if (fillError) console.error("fill_book_details failed", fillError);
   }
 
   // --- 3. reading_histories -------------------------------------------
@@ -242,7 +259,50 @@ export async function updateReadingDates(
   return {};
 }
 
+/**
+ * ページ数・定価・支払額を保存する。
+ * 支払額は自分の user_books に、ページ数・定価は books（共有）の空欄だけを fill_book_details で埋める。
+ */
+export async function updateBookDetails(
+  userBookId: string,
+  values: BookDetailsFormValues,
+): Promise<ActionResult> {
+  const parsed = bookDetailsFormSchema.safeParse(values);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "入力内容が正しくありません" };
+  }
+  const pageCount = toIntOrNull(parsed.data.pageCount);
+  const listPrice = toIntOrNull(parsed.data.listPrice);
+  const pricePaid = toIntOrNull(parsed.data.pricePaid);
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("user_books")
+    .update({ price_paid: pricePaid })
+    .eq("id", userBookId)
+    .select("book_id")
+    .maybeSingle();
+  if (error) return { error: `保存に失敗しました: ${error.message}` };
+  if (!updated) return { error: "本が見つかりません" };
+
+  if (pageCount != null || listPrice != null) {
+    const { error: fillError } = await supabase.rpc("fill_book_details", {
+      p_book_id: updated.book_id,
+      p_page_count: pageCount ?? undefined,
+      p_list_price: listPrice ?? undefined,
+    });
+    if (fillError) {
+      revalidateUserBook(userBookId);
+      return { error: `支払額は保存しましたが、ページ数・定価の保存に失敗しました: ${fillError.message}` };
+    }
+  }
+
+  revalidateUserBook(userBookId);
+  return {};
+}
+
 function revalidateUserBook(userBookId: string) {
   revalidatePath("/books");
   revalidatePath(`/books/${userBookId}`);
+  revalidatePath("/dashboard");
 }

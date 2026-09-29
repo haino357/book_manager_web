@@ -19,6 +19,40 @@ export const SOURCE_LABELS: Record<(typeof BOOK_SOURCES)[number], string> = {
 
 export const bookStatusSchema = z.enum(BOOK_STATUSES);
 
+/** 検索結果・プレビューの補足行（出版社 / 出版日 / 260 ページ / 定価 2,400 円（税抜）） */
+export function formatBookMeta(book: {
+  publisher: string | null;
+  publishedDate: string | null;
+  pageCount: number | null;
+  listPrice: number | null;
+}): string {
+  return [
+    book.publisher,
+    book.publishedDate,
+    book.pageCount != null && `${book.pageCount} ページ`,
+    book.listPrice != null && `定価 ${book.listPrice.toLocaleString()} 円（税抜）`,
+  ]
+    .filter(Boolean)
+    .join(" / ");
+}
+
+/** 空文字 or 整数の文字列（全角数字・カンマも可）。送信時に toIntOrNull で数値にする */
+const optionalIntString = (label: string, min: number, max: number) =>
+  z.string().refine((v) => {
+    const n = toIntOrNull(v);
+    return v.trim() === "" || (n !== null && n >= min && n <= max);
+  }, `${label}は ${min.toLocaleString()}〜${max.toLocaleString()} の整数で入力してください`);
+
+/** "2,400" / "２４００" → 2400。空・不正は null */
+export function toIntOrNull(v: string): number | null {
+  const s = v
+    .trim()
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[,，]/g, "");
+  if (!/^\d+$/.test(s)) return null;
+  return Number(s);
+}
+
 export const STATUS_LABELS: Record<(typeof BOOK_STATUSES)[number], string> = {
   wishlist: "欲しい本",
   unread: "積読",
@@ -40,6 +74,8 @@ export const bookMetadataSchema = z.object({
   coverUrl: z.string().url().max(2000).nullable(),
   description: z.string().max(10000).nullable(),
   categories: z.array(z.string().trim().min(1)).max(50),
+  pageCount: z.number().int().positive().max(100000).nullable(),
+  listPrice: z.number().int().nonnegative().max(10_000_000).nullable(),
   source: z.enum(BOOK_SOURCES),
 });
 
@@ -72,10 +108,23 @@ export const readingDatesFormSchema = z
 export type ReadingDatesFormValues = z.infer<typeof readingDatesFormSchema>;
 
 /**
+ * 詳細画面のページ数・定価・支払額。
+ * ページ数・定価は共有マスター（books）なので、空のときだけ入力できる（fill_book_details）。
+ */
+export const bookDetailsFormSchema = z.object({
+  pageCount: optionalIntString("ページ数", 1, 100000),
+  listPrice: optionalIntString("定価", 0, 10_000_000),
+  pricePaid: optionalIntString("支払額", 0, 10_000_000),
+});
+
+export type BookDetailsFormValues = z.infer<typeof bookDetailsFormSchema>;
+
+/**
  * 手動入力フォームの値（フォーム上は文字列で扱い、送信時に BookMetadata へ変換する）。
  * 空文字は「未入力」とみなして null に落とす。
  */
 const emptyToNull = (v: string) => (v.trim() === "" ? null : v.trim());
+
 
 export const manualBookFormSchema = z.object({
   title: z.string().trim().min(1, "タイトルは必須です").max(500),
@@ -98,6 +147,8 @@ export const manualBookFormSchema = z.object({
       "http(s):// から始まる URL を入力してください",
     ),
   description: z.string().max(10000),
+  pageCount: optionalIntString("ページ数", 1, 100000),
+  listPrice: optionalIntString("定価", 0, 10_000_000),
   status: bookStatusSchema,
 });
 
@@ -120,6 +171,8 @@ export function manualFormToInput(values: ManualBookFormValues): CreateUserBookI
       coverUrl: emptyToNull(values.coverUrl),
       description: emptyToNull(values.description),
       categories: [],
+      pageCount: toIntOrNull(values.pageCount),
+      listPrice: toIntOrNull(values.listPrice),
       source: "manual",
     },
     status: values.status,

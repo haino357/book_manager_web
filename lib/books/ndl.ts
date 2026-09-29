@@ -65,6 +65,8 @@ function parseItem(item: string): BookMetadata | null {
     description: null,
     // xsi:type 無しの dc:subject が件名（NDLC / NDC コードは除く）
     categories: textAll(item, "dc:subject", /* untypedOnly */ true),
+    pageCount: parseExtent(text(item, "dcterms:extent")),
+    listPrice: parsePrice(text(item, "dcndl:price")),
     source: "ndl",
   };
 }
@@ -92,6 +94,20 @@ function textAll(xml: string, tag: string, untypedOnly = false): string[] {
 /** "リーダブルコード : より良い…" のようにサブタイトルが " : " で続く形はそのまま残す（情報として有用） */
 function cleanTitle(title: string): string {
   return title.replace(/\s+/g, " ").trim();
+}
+
+/** "234p ; 21cm" → 234。"xii, 234p" のような前付けのローマ数字は数えない */
+export function parseExtent(v: string | null): number | null {
+  const m = v?.match(/(\d+)\s*p/);
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/** "2400円" / "2,400円 (税別)" → 2400 */
+export function parsePrice(v: string | null): number | null {
+  const m = v?.replace(/,/g, "").match(/(\d+)\s*円/);
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isInteger(n) && n > 0 ? n : null;
 }
 
 /** "2012.6" → "2012-06"、"2012" → "2012"、"2022.4.30" → "2022-04-30" */
