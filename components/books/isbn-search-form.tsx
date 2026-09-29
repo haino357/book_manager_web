@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { createUserBook, type CreateUserBookError } from "@/lib/actions/books";
-import { SOURCE_LABELS } from "@/lib/books/schema";
+import { formatBookMeta, SOURCE_LABELS } from "@/lib/books/schema";
 import type { BookMetadata } from "@/lib/books/types";
 import { normalizeIsbn } from "@/lib/books/types";
 import type { BookStatus } from "@/lib/types/enums";
@@ -159,7 +159,7 @@ export function IsbnSearchForm({ onSwitchToManual }: Props) {
                 {search.book.authors.length ? search.book.authors.join(", ") : "著者不明"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {[search.book.publisher, search.book.publishedDate].filter(Boolean).join(" / ")}
+                {formatBookMeta(search.book)}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 <Badge variant="outline">{SOURCE_LABELS[search.book.source]}</Badge>

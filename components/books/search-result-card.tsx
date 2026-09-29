@@ -8,7 +8,7 @@ import { StatusSelect } from "@/components/books/status-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createUserBook, type CreateUserBookError } from "@/lib/actions/books";
-import { SOURCE_LABELS } from "@/lib/books/schema";
+import { formatBookMeta, SOURCE_LABELS } from "@/lib/books/schema";
 import type { BookMetadata } from "@/lib/books/types";
 import type { BookStatus } from "@/lib/types/enums";
 
@@ -36,7 +36,7 @@ export function SearchResultCard({ book, registeredUserBookId }: Props) {
     });
   }
 
-  const meta = [book.publisher, book.publishedDate].filter(Boolean).join(" / ");
+  const meta = formatBookMeta(book);
 
   return (
     <li className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row">

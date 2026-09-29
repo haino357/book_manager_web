@@ -18,6 +18,8 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-viz-series: var(--viz-series);
+  --color-viz-track: var(--viz-track);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -72,6 +74,9 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  /* 統計ダッシュボード: 単一系列の色（dataviz リファレンスパレットの blue、白背景で 3:1 以上）と、メーターの未達部分 */
+  --viz-series: #2a78d6;
+  --viz-track: #cde2fb;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -84,6 +89,8 @@
 }
 
 .dark {
+  --viz-series: #3987e5;
+  --viz-track: #184f95;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

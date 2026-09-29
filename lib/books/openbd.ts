@@ -16,6 +16,8 @@ type OpenBdItem = {
   summary: OpenBdSummary;
   onix?: {
     DescriptiveDetail?: {
+      /** ExtentType "11" = ページ数 */
+      Extent?: { ExtentType?: string; ExtentValue?: string }[];
       Contributor?: {
         ContributorRole?: string[];
         PersonName?: { content?: string };
@@ -24,6 +26,12 @@ type OpenBdItem = {
     };
     CollateralDetail?: {
       TextContent?: { TextType: string; Text: string }[];
+    };
+    ProductSupply?: {
+      SupplyDetail?: {
+        /** PriceType "01" / "03" = 定価（税抜） */
+        Price?: { PriceType?: string; PriceAmount?: string; CurrencyCode?: string }[];
+      };
     };
   };
 } | null;
@@ -95,8 +103,28 @@ function mapItem(
     coverUrl: s.cover || null,
     description,
     categories: [],
+    pageCount: parsePageCount(item),
+    listPrice: parseListPrice(item),
     source: "openbd",
   };
+}
+
+function parsePageCount(item: NonNullable<OpenBdItem>): number | null {
+  const extent = item.onix?.DescriptiveDetail?.Extent?.find((e) => e.ExtentType === "11");
+  const n = Number(extent?.ExtentValue);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+function parseListPrice(item: NonNullable<OpenBdItem>): number | null {
+  const prices = (item.onix?.ProductSupply?.SupplyDetail?.Price ?? []).filter(
+    (p) => !p.CurrencyCode || p.CurrencyCode === "JPY",
+  );
+  const price =
+    prices.find((p) => p.PriceType === "03") ??
+    prices.find((p) => p.PriceType === "01") ??
+    prices[0];
+  const n = Number(price?.PriceAmount);
+  return Number.isInteger(n) && n > 0 ? n : null;
 }
 
 /**

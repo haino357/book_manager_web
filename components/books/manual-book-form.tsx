@@ -40,6 +40,8 @@ export function ManualBookForm({ initialIsbn = "" }: Props) {
       isbn: initialIsbn,
       coverUrl: "",
       description: "",
+      pageCount: "",
+      listPrice: "",
       status: "unread",
     },
   });
@@ -94,6 +96,19 @@ export function ManualBookForm({ initialIsbn = "" }: Props) {
         </Field>
         <Field label="書影 URL" htmlFor="m-coverUrl" error={errors.coverUrl?.message}>
           <Input id="m-coverUrl" type="url" autoComplete="off" placeholder="https://" {...form.register("coverUrl")} />
+        </Field>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="ページ数" htmlFor="m-pageCount" error={errors.pageCount?.message}>
+          <Input id="m-pageCount" inputMode="numeric" autoComplete="off" placeholder="260" {...form.register("pageCount")} />
+        </Field>
+        <Field
+          label="定価（税抜・円）"
+          htmlFor="m-listPrice"
+          error={errors.listPrice?.message}
+        >
+          <Input id="m-listPrice" inputMode="numeric" autoComplete="off" placeholder="2400" {...form.register("listPrice")} />
         </Field>
       </div>
 

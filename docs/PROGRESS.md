@@ -95,9 +95,14 @@ plan: ../../book-manager-web-mvp-plan.md
 | プランの項目 | 状態 |
 |---|---|
 | ★評価コンポーネント | ⬜ |
-| `/dashboard` 月別読了数（棒） | ⬜（ページ雛形のみ） |
-| ジャンル別分布（円） | ⬜ |
-| 年間目標進捗バー | ⬜ |
+| `/dashboard` 月別読了数（棒） | ✅ 直近 12 ヶ月 + `?year=` で年切替。初めて読了した月で数え、再読は数えない（#12） |
+| ジャンル別分布（円） | ✅ 名前が長く件数も多いので横棒に変更。`categories[0]` の最初のセグメント、上位 8 件 + その他（#13） |
+| 年間目標進捗バー | ✅ メーター + 設定ダイアログ（`profiles.yearly_goal`）。`display_name` の編集は入れていない（#14） |
+| ステータス別の金額（プラン外） | ✅ 支払額（`user_books.price_paid`）があればそれ、無ければ定価（`books.list_price`、税抜）で合計（#24） |
+| 読了本を積み上げた高さ（プラン外） | ✅ 紙 1 枚 = 2 ページ・0.1 mm。身近なものとの比較付き（#25） |
+
+`00003_book_price_pages.sql` で `books.page_count` / `books.list_price` / `user_books.price_paid` と、空欄だけを埋める `fill_book_details` RPC を追加。
+ページ数は Google Books / OpenBD / NDL、定価は OpenBD / NDL から取得（Google の定価は税込のため使わない）。集計は `lib/stats/dashboard.ts`。
 
 ### M4：公開
 

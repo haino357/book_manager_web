@@ -11,6 +11,10 @@ export type BookMetadata = {
   coverUrl: string | null;
   description: string | null;
   categories: string[];
+  /** ページ数。取れなければ null */
+  pageCount: number | null;
+  /** 定価（税抜・円）。取れなければ null */
+  listPrice: number | null;
   source: BookSource;
 };
 

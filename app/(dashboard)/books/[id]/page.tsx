@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BookCover } from "@/components/books/book-cover";
+import { BookDetailsForm } from "@/components/books/book-details-form";
 import { ReadingDatesForm } from "@/components/books/reading-dates-form";
 import { UserBookStatusSelect } from "@/components/books/user-book-status-select";
 import { Separator } from "@/components/ui/separator";
@@ -76,6 +77,16 @@ export default async function BookDetailPage({ params }: PageProps<"/books/[id]"
           userBookId={userBook.id}
           startedAt={userBook.started_at}
           completedAt={userBook.completed_at}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">ページ数・金額</h2>
+        <BookDetailsForm
+          userBookId={userBook.id}
+          pageCount={book?.page_count ?? null}
+          listPrice={book?.list_price ?? null}
+          pricePaid={userBook.price_paid}
         />
       </section>
 
