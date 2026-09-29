@@ -5,10 +5,12 @@ import { useState, useTransition } from "react";
 
 import { BookCover } from "@/components/books/book-cover";
 import { StatusSelect } from "@/components/books/status-select";
+import { StoreLinks } from "@/components/books/store-links";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createUserBook, type CreateUserBookError } from "@/lib/actions/books";
 import { formatBookMeta, SOURCE_LABELS } from "@/lib/books/schema";
+import type { StoreLink } from "@/lib/books/store-links";
 import type { BookMetadata } from "@/lib/books/types";
 import type { BookStatus } from "@/lib/types/enums";
 
@@ -16,13 +18,15 @@ type Props = {
   book: BookMetadata;
   /** すでに本棚にある場合の user_books.id */
   registeredUserBookId?: string;
+  /** Amazon などへのリンク。アソシエイトのタグはサーバーの環境変数なので、ページ側で組み立てて渡す */
+  storeLinks?: StoreLink[];
 };
 
 /**
  * 検索結果 1 件。書影・書誌 + ステータス選択 + 登録ボタン。
  * 登録済みなら「本棚で見る」リンクに置き換える。
  */
-export function SearchResultCard({ book, registeredUserBookId }: Props) {
+export function SearchResultCard({ book, registeredUserBookId, storeLinks = [] }: Props) {
   const [status, setStatus] = useState<BookStatus>("unread");
   const [actionError, setActionError] = useState<CreateUserBookError | null>(null);
   const [pending, startTransition] = useTransition();
@@ -63,6 +67,7 @@ export function SearchResultCard({ book, registeredUserBookId }: Props) {
         {book.description && (
           <p className="line-clamp-2 text-sm text-muted-foreground">{book.description}</p>
         )}
+        <StoreLinks links={storeLinks} />
       </div>
       <div className="flex shrink-0 flex-col gap-2 sm:w-44 sm:items-stretch">
         {registeredUserBookId ? (

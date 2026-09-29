@@ -1,38 +1,53 @@
+import { resolveCover } from "./covers";
 import { fetchFromGoogleBooks } from "./google-books";
-import { resolveGoogleCover } from "./google-cover";
 import { fetchFromOpenBd } from "./openbd";
+import { fetchFromRakuten } from "./rakuten";
 import type { BookMetadata } from "./types";
 
 /**
- * 取得戦略: Google Books を正とし、OpenBD で書影・出版社・ページ数・定価を補完 → どちらも無ければ null（手動入力へ）。
- * 定価（税抜）は OpenBD からしか取れないので、両方を並列に引く。
- * 書影がどちらにも無ければ Google の書影配信（API クォータ外）を試す。
+ * 取得戦略: Google Books・OpenBD・楽天ブックスを並列に引き、Google → OpenBD → 楽天の順に正とする。
+ * 足りない項目（書影・出版社・説明・ページ数・定価）は後ろのソースで補完する。
+ * 定価（税抜）は OpenBD を優先し、無ければ楽天の税込価格から換算した値を使う。
+ * どれにも無ければ null（手動入力へ）。書影がどれにも無ければ NDL の書影 API → Google の書影配信を試す。
  */
 export async function searchBookByIsbn(
   isbn: string,
 ): Promise<BookMetadata | null> {
-  const [google, openbd] = await Promise.all([
+  const results = await Promise.all([
     fetchFromGoogleBooks(isbn).catch(() => null),
     fetchFromOpenBd(isbn).catch(() => null),
+    fetchFromRakuten(isbn).catch(() => null),
   ]);
-  let book: BookMetadata | null;
-  if (!google) book = openbd;
-  else if (!openbd) book = google;
-  else {
-    // Google Books の結果を正としつつ、足りない項目を OpenBD で補完
-    book = {
-      ...google,
-      coverUrl: google.coverUrl ?? openbd.coverUrl,
-      publisher: google.publisher ?? openbd.publisher,
-      description: google.description ?? openbd.description,
-      pageCount: google.pageCount ?? openbd.pageCount,
-      listPrice: google.listPrice ?? openbd.listPrice,
-    };
-  }
 
+  let book = mergeMetadata(results);
   if (book && !book.coverUrl && book.isbn13) {
-    const cover = await resolveGoogleCover(book.isbn13);
+    const cover = await resolveCover(book.isbn13);
     if (cover) book = { ...book, coverUrl: cover };
   }
   return book;
+}
+
+/**
+ * 先頭のソースを正とし、null・空配列の項目だけを後ろのソースで埋める。
+ * source は正としたソースのまま（どの API の結果を元に登録したかを残す）。
+ */
+export function mergeMetadata(sources: (BookMetadata | null)[]): BookMetadata | null {
+  const found = sources.filter((b): b is BookMetadata => b !== null);
+  if (found.length === 0) return null;
+  const [primary, ...rest] = found;
+
+  const merged = { ...primary };
+  for (const other of rest) {
+    merged.isbn13 ??= other.isbn13;
+    merged.isbn10 ??= other.isbn10;
+    merged.publisher ??= other.publisher;
+    merged.publishedDate ??= other.publishedDate;
+    merged.coverUrl ??= other.coverUrl;
+    merged.description ??= other.description;
+    merged.pageCount ??= other.pageCount;
+    merged.listPrice ??= other.listPrice;
+    if (merged.authors.length === 0) merged.authors = other.authors;
+    if (merged.categories.length === 0) merged.categories = other.categories;
+  }
+  return merged;
 }

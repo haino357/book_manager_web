@@ -1,13 +1,14 @@
+import { fillMissingCovers } from "./covers";
 import { GoogleBooksQuotaError, searchGoogleBooksByKeyword } from "./google-books";
-import { fillMissingCovers } from "./google-cover";
 import { searchNdlByKeyword } from "./ndl";
 import { fetchManyFromOpenBd } from "./openbd";
+import { RakutenQuotaError, searchRakutenByKeyword } from "./rakuten";
 import type { BookMetadata } from "./types";
 
 export type TextSearchResult = {
   items: BookMetadata[];
   /** 実際に結果を返したソース。UI で「NDL サーチの結果です」などを出すために使う */
-  provider: "google_books" | "ndl" | null;
+  provider: "google_books" | "rakuten" | "ndl" | null;
   /** Google Books がクォータ超過で使えなかった場合 true */
   googleQuotaExceeded: boolean;
 };
@@ -15,8 +16,10 @@ export type TextSearchResult = {
 /**
  * 自由記述（タイトル・著者など）で書籍を探す。
  *
- * 取得戦略: Google Books（書影・カテゴリが取れる）→ 429 または 0 件なら NDL サーチ。
- * どちらの結果も、ISBN があるものは OpenBD でまとめて補完する（NDL の書影・説明、Google の定価・ページ数）。
+ * 取得戦略: Google Books（書影・カテゴリが取れる）→ 429 または 0 件なら楽天ブックス（日本の本に強い）
+ * → それでも 0 件（未設定・429 を含む）なら NDL サーチ。
+ * どの結果も、ISBN があるものは OpenBD でまとめて補完する（書影・説明・ページ数・定価）。
+ * 書影がまだ無い本は NDL の書影 API → Google の書影配信で補完する。
  * 結果は isbn13 で重複排除する（ISBN 無しはタイトル+著者で判定）。
  */
 export async function searchBooksByText(
@@ -42,6 +45,19 @@ export async function searchBooksByText(
   }
 
   if (items.length === 0) {
+    try {
+      const rakuten = await searchRakutenByKeyword(q, maxResults);
+      if (rakuten.length) {
+        provider = "rakuten";
+        items = await enrichWithOpenBd(rakuten);
+      }
+    } catch (e) {
+      // 429 もネットワークエラーも NDL へ
+      if (!(e instanceof RakutenQuotaError)) console.error("rakuten search failed", e);
+    }
+  }
+
+  if (items.length === 0) {
     const ndl = await searchNdlByKeyword(q, maxResults).catch(() => [] as BookMetadata[]);
     if (ndl.length) {
       provider = "ndl";
@@ -49,7 +65,7 @@ export async function searchBooksByText(
     }
   }
 
-  // 書影が無い本は Google の書影配信（API クォータ外）で補完する
+  // 書影が無い本は NDL の書影 API → Google の書影配信（どちらも API クォータ外）で補完する
   const withCovers = await fillMissingCovers(dedupe(items));
   return { items: withCovers, provider, googleQuotaExceeded };
 }

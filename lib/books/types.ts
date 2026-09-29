@@ -38,3 +38,13 @@ export function isbn10To13(isbn10: string): string {
   const check = (10 - (sum % 10)) % 10;
   return `${core}${check}`;
 }
+
+/** ISBN-13 → ISBN-10。978 で始まるものだけ変換できる（979 は ISBN-10 が無い） */
+export function isbn13To10(isbn13: string): string | null {
+  if (!/^978\d{10}$/.test(isbn13)) return null;
+  const core = isbn13.slice(3, 12);
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += Number(core[i]) * (10 - i);
+  const check = (11 - (sum % 11)) % 11;
+  return `${core}${check === 10 ? "X" : check}`;
+}
