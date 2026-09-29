@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { BookCover } from "@/components/books/book-cover";
 import { BookDetailsForm } from "@/components/books/book-details-form";
+import { RatingStars } from "@/components/books/rating-stars";
 import { ReadingDatesForm } from "@/components/books/reading-dates-form";
 import { StoreLinks } from "@/components/books/store-links";
 import { UserBookStatusSelect } from "@/components/books/user-book-status-select";
@@ -19,7 +20,6 @@ export const metadata: Metadata = { title: "書籍詳細" };
  * M2: 書籍詳細・ステータス遷移・読書日付・再読履歴。
  * TODO:
  *   - #8: components/memos/memo-list.tsx（種別タブ）、memo-form.tsx、action の完了トグル
- *   - #11: components/books/rating-stars.tsx
  */
 export default async function BookDetailPage({ params }: PageProps<"/books/[id]">) {
   const { id } = await params;
@@ -71,6 +71,10 @@ export default async function BookDetailPage({ params }: PageProps<"/books/[id]"
               userBookId={userBook.id}
               status={userBook.status as BookStatus}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">評価</span>
+            <RatingStars userBookId={userBook.id} rating={userBook.rating} />
           </div>
         </div>
       </section>

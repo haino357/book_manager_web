@@ -16,6 +16,7 @@ import {
   formatHeight,
   monthlyCompleted,
   priceByStatus,
+  ratingSummary,
   readStack,
   type StatsRow,
 } from "@/lib/stats/dashboard";
@@ -34,6 +35,7 @@ const yen = (n: number) => `${n.toLocaleString()} 円`;
  * - #14 年間目標
  * - #24 ステータス別の金額
  * - #25 読了本を積み上げた高さ
+ * - #11 評価の平均と分布
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const params = await searchParams;
@@ -46,7 +48,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     supabase
       .from("user_books")
       .select(
-        "status, completed_at, price_paid, books(page_count, list_price, categories), reading_histories(completed_at)",
+        "status, completed_at, price_paid, rating, books(page_count, list_price, categories), reading_histories(completed_at)",
       ),
     supabase.from("profiles").select("yearly_goal").eq("id", user!.id).maybeSingle(),
   ]);
@@ -62,6 +64,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const monthlyTotal = monthly.reduce((sum, m) => sum + m.count, 0);
   const categories = categoryBreakdown(rows);
   const prices = priceByStatus(rows);
+  const ratings = ratingSummary(rows);
   const stack = readStack(rows);
   const comparison = compareHeight(stack.heightMm);
 
@@ -170,6 +173,45 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </div>
         <p className="text-xs text-muted-foreground">
           書誌のカテゴリ（Google Books・NDL サーチ）の先頭で分類しています。カテゴリが無い本と上位 8 件より下は「その他」です。
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">評価</h2>
+        {ratings.rated ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <StatTile
+                label="平均評価"
+                value={`★ ${ratings.average!.toFixed(1)}`}
+                note={`${ratings.rated} 冊の平均`}
+              />
+              <StatTile
+                label="評価した本"
+                value={`${ratings.rated} 冊`}
+                note={ratings.unrated ? `未評価 ${ratings.unrated} 冊` : "すべて評価済み"}
+              />
+            </div>
+            <div className="rounded-xl border p-4">
+              <CategoryBarChart
+                data={ratings.distribution}
+                ariaLabel="評価別冊数の横棒グラフ"
+                labelWidth={40}
+              />
+              <DataTable
+                caption="評価別の冊数"
+                headers={["評価", "冊数"]}
+                rows={ratings.distribution.map((r) => [r.name, r.count])}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            まだ評価した本がありません。各本の詳細画面で ★ を付けると、ここに平均と分布が表示されます。
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          ステータスに関係なく、★ を付けた本で集計しています。
         </p>
       </section>
     </div>

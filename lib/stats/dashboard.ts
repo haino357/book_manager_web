@@ -13,6 +13,8 @@ export type StatsRow = {
   status: BookStatus;
   completed_at: string | null;
   price_paid: number | null;
+  /** 1〜5。未評価は null */
+  rating: number | null;
   books: {
     page_count: number | null;
     list_price: number | null;
@@ -131,6 +133,43 @@ export function priceByStatus(rows: StatsRow[]): PriceSummary[] {
     }
     return { status, books: target.length, total, unknown };
   });
+}
+
+// --- #11 評価 ---------------------------------------------------------------
+
+export type RatingPoint = { rating: number; name: string; count: number };
+
+export type RatingSummary = {
+  /** 評価した冊数 */
+  rated: number;
+  /** 未評価の冊数（全ステータス） */
+  unrated: number;
+  /** 平均（小数第 1 位で丸める前の値）。評価が無ければ null */
+  average: number | null;
+  /** ★5 → ★1 の順の冊数 */
+  distribution: RatingPoint[];
+};
+
+/** 評価の分布と平均（全ステータス。評価はステータスに関係なく付けられる） */
+export function ratingSummary(rows: StatsRow[]): RatingSummary {
+  const counts = [0, 0, 0, 0, 0];
+  let sum = 0;
+  for (const r of rows) {
+    if (r.rating == null) continue;
+    counts[r.rating - 1]++;
+    sum += r.rating;
+  }
+  const rated = counts.reduce((a, b) => a + b, 0);
+  return {
+    rated,
+    unrated: rows.length - rated,
+    average: rated ? sum / rated : null,
+    distribution: [5, 4, 3, 2, 1].map((n) => ({
+      rating: n,
+      name: `★${n}`,
+      count: counts[n - 1],
+    })),
+  };
 }
 
 // --- #25 積み上げた高さ -----------------------------------------------------

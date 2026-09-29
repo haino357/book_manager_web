@@ -7,6 +7,7 @@ import {
   createUserBookSchema,
   readingDatesFormSchema,
   toPostgresDate,
+  updateRatingSchema,
   updateStatusSchema,
   bookDetailsFormSchema,
   toIntOrNull,
@@ -323,6 +324,28 @@ export async function updateBookDetails(
       return { error: `支払額は保存しましたが、ページ数・定価の保存に失敗しました: ${fillError.message}` };
     }
   }
+
+  revalidateUserBook(userBookId);
+  return {};
+}
+
+/** ★評価を保存する（#11）。null で評価を外す */
+export async function updateRating(
+  userBookId: string,
+  rating: number | null,
+): Promise<ActionResult> {
+  const parsed = updateRatingSchema.safeParse({ userBookId, rating });
+  if (!parsed.success) return { error: "評価は 1〜5 で指定してください" };
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("user_books")
+    .update({ rating: parsed.data.rating })
+    .eq("id", userBookId)
+    .select("id")
+    .maybeSingle();
+  if (error) return { error: `評価の保存に失敗しました: ${error.message}` };
+  if (!updated) return { error: "本が見つかりません" };
 
   revalidateUserBook(userBookId);
   return {};

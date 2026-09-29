@@ -17,12 +17,22 @@ import type { CategoryPoint } from "@/lib/stats/dashboard";
 /**
  * ジャンル別の冊数（#13）。Issue では円グラフの想定だったが、ジャンル名が長く件数も多いので
  * 読み比べやすい横棒にした（1 色。ジャンルは軸ラベルで示すので色分けしない）。
+ * 評価の分布（#11）も同じ見た目で使う（ariaLabel と labelWidth を渡す）。
  */
-export function CategoryBarChart({ data }: { data: CategoryPoint[] }) {
+export function CategoryBarChart({
+  data,
+  ariaLabel = "ジャンル別冊数の横棒グラフ",
+  labelWidth = 128,
+}: {
+  data: CategoryPoint[];
+  ariaLabel?: string;
+  /** 軸ラベルの幅（px） */
+  labelWidth?: number;
+}) {
   // 1 本 32px + 余白。名前が多くても潰れないよう高さを件数で決める
   const height = Math.max(120, data.length * 32 + 16);
   return (
-    <div className="w-full" style={{ height }} role="img" aria-label="ジャンル別冊数の横棒グラフ">
+    <div className="w-full" style={{ height }} role="img" aria-label={ariaLabel}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 40, bottom: 0, left: 0 }}>
           <CartesianGrid horizontal={false} stroke="var(--border)" />
@@ -30,7 +40,7 @@ export function CategoryBarChart({ data }: { data: CategoryPoint[] }) {
           <YAxis
             type="category"
             dataKey="name"
-            width={128}
+            width={labelWidth}
             tickLine={false}
             axisLine={{ stroke: "var(--border)" }}
             tick={{ fill: "var(--foreground)", fontSize: 12 }}
