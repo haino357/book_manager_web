@@ -36,12 +36,42 @@ export type ActionResult = { error?: string };
  * 3. completed で登録したら reading_histories にも 1 行追加（月別読了数の集計対象にする）
  * 4. revalidatePath("/books") → /books/[id] へ遷移
  *
+ * 画面遷移せずに登録したいとき（検索結果から登録）は addUserBook を使う。
+ *
  * books には update ポリシーが無いため、既存行のメタデータ（書影など）は更新しない。
  * ページ数・定価だけは、既存行で空なら fill_book_details で埋める（統計用。#24 #25）。
  */
 export async function createUserBook(
   input: CreateUserBookInput,
 ): Promise<CreateUserBookError> {
+  const result = await insertUserBook(input);
+  if ("error" in result) return result;
+
+  // redirect は throw するので try/catch の外で呼ぶ（Next.js 16 docs: redirect）
+  revalidatePath("/books");
+  redirect(`/books/${result.userBookId}`);
+}
+
+/**
+ * 蔵書を登録し、画面遷移せずに user_books.id を返す（検索結果の「登録する」）。
+ * 処理は createUserBook と同じ。検索結果の「登録済み」表示を更新するため /books/search も再検証する。
+ */
+export async function addUserBook(
+  input: CreateUserBookInput,
+): Promise<CreateUserBookError | { userBookId: string }> {
+  const result = await insertUserBook(input);
+  if ("error" in result) return result;
+
+  revalidatePath("/books");
+  revalidatePath("/books/search");
+  revalidatePath("/dashboard");
+  return result;
+}
+
+/** createUserBook / addUserBook の 1〜3 */
+async function insertUserBook(
+  input: CreateUserBookInput,
+): Promise<CreateUserBookError | { userBookId: string }> {
   const parsed = createUserBookSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -154,10 +184,7 @@ export async function createUserBook(
     if (historyError) console.error("reading_histories insert failed", historyError);
   }
 
-  // --- 4. revalidate + redirect ----------------------------------------
-  // redirect は throw するので try/catch の外で呼ぶ（Next.js 16 docs: redirect）
-  revalidatePath("/books");
-  redirect(`/books/${userBook.id}`);
+  return { userBookId: userBook.id };
 }
 
 /**

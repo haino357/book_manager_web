@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { BookCover } from "@/components/books/book-cover";
 import { StatusSelect } from "@/components/books/status-select";
 import { StoreLinks } from "@/components/books/store-links";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { createUserBook, type CreateUserBookError } from "@/lib/actions/books";
+import { addUserBook, type CreateUserBookError } from "@/lib/actions/books";
 import { formatBookMeta, SOURCE_LABELS } from "@/lib/books/schema";
 import type { StoreLink } from "@/lib/books/store-links";
 import type { BookMetadata } from "@/lib/books/types";
@@ -24,19 +25,29 @@ type Props = {
 
 /**
  * 検索結果 1 件。書影・書誌 + ステータス選択 + 登録ボタン。
- * 登録済みなら「本棚で見る」リンクに置き換える。
+ * 登録済みなら「本棚で見る」リンクに置き換える。登録ボタンを押しても画面遷移せず、その場で登録済みに切り替える。
  */
 export function SearchResultCard({ book, registeredUserBookId, storeLinks = [] }: Props) {
   const [status, setStatus] = useState<BookStatus>("unread");
   const [actionError, setActionError] = useState<CreateUserBookError | null>(null);
+  // 登録した直後はサーバーの再描画を待たずに登録済みにする
+  const [registeredId, setRegisteredId] = useState<string>();
+  const userBookId = registeredId ?? registeredUserBookId;
   const [pending, startTransition] = useTransition();
 
   function handleRegister() {
     setActionError(null);
     startTransition(async () => {
-      // 成功時は Server Action 内で /books/[id] へ redirect される
-      const result = await createUserBook({ metadata: book, status });
-      if (result?.error) setActionError(result);
+      const result = await addUserBook({ metadata: book, status });
+      if ("userBookId" in result) {
+        setRegisteredId(result.userBookId);
+        toast.success(`「${book.title}」を登録しました`);
+      } else if (result.existingUserBookId) {
+        // 別タブなどで登録済みだった場合も登録済みの表示にする
+        setRegisteredId(result.existingUserBookId);
+      } else {
+        setActionError(result);
+      }
     });
   }
 
@@ -70,11 +81,11 @@ export function SearchResultCard({ book, registeredUserBookId, storeLinks = [] }
         <StoreLinks links={storeLinks} />
       </div>
       <div className="flex shrink-0 flex-col gap-2 sm:w-44 sm:items-stretch">
-        {registeredUserBookId ? (
+        {userBookId ? (
           <>
             <Badge className="w-fit">登録済み</Badge>
             <Button asChild variant="outline" size="sm">
-              <Link href={`/books/${registeredUserBookId}`}>本棚で見る</Link>
+              <Link href={`/books/${userBookId}`}>本棚で見る</Link>
             </Button>
           </>
         ) : (
@@ -91,14 +102,6 @@ export function SearchResultCard({ book, registeredUserBookId, storeLinks = [] }
             {actionError && (
               <p role="alert" className="text-xs text-destructive">
                 {actionError.error}
-                {actionError.existingUserBookId && (
-                  <>
-                    {" "}
-                    <Link href={`/books/${actionError.existingUserBookId}`} className="underline">
-                      本棚で見る
-                    </Link>
-                  </>
-                )}
               </p>
             )}
           </>
