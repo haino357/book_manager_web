@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SearchBox } from "@/components/books/search-box";
 import { SearchResultCard } from "@/components/books/search-result-card";
 import { Button } from "@/components/ui/button";
+import { amazonAssociateTag, buildStoreLinks } from "@/lib/books/store-links";
 import { searchBooksByText } from "@/lib/books/text-search";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,15 +12,22 @@ export const metadata: Metadata = { title: "書籍を検索" };
 
 const MAX_RESULTS = 20;
 
+const PROVIDER_LABELS = {
+  google_books: "Google Books",
+  rakuten: "楽天ブックス + OpenBD",
+  ndl: "NDL サーチ + OpenBD",
+} as const;
+
 /**
  * 自由記述検索の結果一覧。
- * Google Books → NDL サーチ（OpenBD で書影補完）の順に探し、本棚にある本は「登録済み」を付ける。
+ * Google Books → 楽天ブックス → NDL サーチの順に探し（OpenBD で補完）、本棚にある本は「登録済み」を付ける。
  */
 export default async function BookSearchPage({ searchParams }: PageProps<"/books/search">) {
   const params = await searchParams;
   const q = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim() ?? "";
 
   const result = q ? await searchBooksByText(q, MAX_RESULTS) : null;
+  const amazonTag = amazonAssociateTag();
 
   // 本棚にある本（isbn13 で照合）
   const registered = new Map<string, string>();
@@ -61,14 +69,14 @@ export default async function BookSearchPage({ searchParams }: PageProps<"/books
             </p>
             {result.provider && (
               <p>
-                ソース: {result.provider === "google_books" ? "Google Books" : "NDL サーチ + OpenBD"}
+                ソース: {PROVIDER_LABELS[result.provider]}
               </p>
             )}
           </div>
 
           {result.googleQuotaExceeded && (
             <p className="rounded-md bg-muted p-3 text-sm">
-              Google Books がクォータ超過のため NDL サーチで検索しました。書影やカテゴリが付かないことがあります。
+              Google Books がクォータ超過のため{result.provider ? `${PROVIDER_LABELS[result.provider]}で` : "ほかのソースで"}検索しました。カテゴリが付かないことがあります。
               <code className="ml-1">GOOGLE_BOOKS_API_KEY</code> を設定すると解消します。
             </p>
           )}
@@ -87,6 +95,7 @@ export default async function BookSearchPage({ searchParams }: PageProps<"/books
                   key={book.isbn13 ?? `${book.title}-${i}`}
                   book={book}
                   registeredUserBookId={book.isbn13 ? registered.get(book.isbn13) : undefined}
+                  storeLinks={buildStoreLinks(book, amazonTag)}
                 />
               ))}
             </ul>

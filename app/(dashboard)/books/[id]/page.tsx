@@ -5,8 +5,10 @@ import { notFound } from "next/navigation";
 import { BookCover } from "@/components/books/book-cover";
 import { BookDetailsForm } from "@/components/books/book-details-form";
 import { ReadingDatesForm } from "@/components/books/reading-dates-form";
+import { StoreLinks } from "@/components/books/store-links";
 import { UserBookStatusSelect } from "@/components/books/user-book-status-select";
 import { Separator } from "@/components/ui/separator";
+import { amazonAssociateTag, buildStoreLinks } from "@/lib/books/store-links";
 import { formatDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import type { BookStatus } from "@/lib/types/enums";
@@ -55,6 +57,14 @@ export default async function BookDetailPage({ params }: PageProps<"/books/[id]"
             {book?.authors?.length ? book.authors.join(", ") : "著者不明"}
           </p>
           {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
+          {book && (
+            <StoreLinks
+              links={buildStoreLinks(
+                { isbn13: book.isbn13, isbn10: book.isbn10, title: book.title, authors: book.authors },
+                amazonAssociateTag(),
+              )}
+            />
+          )}
           <div className="flex items-center gap-2 pt-1">
             <span className="text-sm text-muted-foreground">ステータス</span>
             <UserBookStatusSelect

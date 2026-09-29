@@ -23,7 +23,7 @@ plan: ../../book-manager-web-mvp-plan.md
 | 静的ページ `/privacy` `/support` | ✅ 骨子作成済み。文面・連絡先は TODO |
 | 書籍 API クライアント | ✅ 実データで検証済み（OpenBD 系）。Google Books はキー無しだと 429 になりやすく、フォールバックで動く |
 | M2 書籍登録 | ✅ `/books/add`（ISBN 検索 + タイトル・著者検索 + 手動入力）と `createUserBook` を実装・検証済み（#5 #6） |
-| M2 自由記述検索（#20） | ✅ `/books/search?q=` 一覧ページ。Google Books → 429 なら NDL サーチ + OpenBD 補完。書影が無い本は Google 書影配信で補完。登録済みバッジ付き |
+| M2 自由記述検索（#20） | ✅ `/books/search?q=` 一覧ページ。Google Books → 429 / 0 件なら楽天ブックス → NDL サーチ、OpenBD で補完（#27）。書影が無い本は NDL 書影 API → Google 書影配信で補完。登録済みバッジ付き |
 | M2 一覧・詳細・メモ / M3 | 🟡 一覧は書影付き最小表示。詳細・メモ・ステータス遷移・統計は雛形 |
 | ビルド・型・lint | ✅ `npm run build` / `tsc --noEmit` / `eslint` すべて通過（`gen:types` 生成物に対しても通過） |
 | ローカル開発環境 | ✅ Docker Desktop + Supabase CLI で起動・検証済み。手順は `docs/LOCAL_DEV_SETUP.md` |
@@ -84,7 +84,7 @@ plan: ../../book-manager-web-mvp-plan.md
 |---|---|---|
 | Google Books / OpenBD クライアント、`/api/books/search` BFF | ✅ | 実データで検証。未ログインは 401（proxy で `/api/` はリダイレクトしない）。OpenBD の著者名解析を ONIX Contributor ベースに修正 |
 | `/books/add` ISBN 検索 + 手動入力フォーム | ✅ | 3 タブ（ISBN / タイトル・著者 / 手動）。ISBN 検索 → プレビュー（書影・著者・出版社・カテゴリ）→ ステータス選択 → 登録。見つからなければ ISBN を引き継いで手動タブへ。手動は RHF + Zod、ISBN 無し可 |
-| 自由記述検索 `/books/search`（プラン外・モバイル #7 相当、Web #20） | ✅ | 検索欄は `/books/add` タブとヘッダーナビ「検索」から。結果カードでステータスを選んでそのまま登録。`books.source` に `ndl` を追加（`00002`） |
+| 自由記述検索 `/books/search`（プラン外・モバイル #7 相当、Web #20） | ✅ | 検索欄は `/books/add` タブとヘッダーナビ「検索」から。結果カードでステータスを選んでそのまま登録。`books.source` に `ndl` を追加（`00002`）、`rakuten` を追加（`00004`、#27）。詳細画面と検索結果に Amazon・楽天ブックス・カーリルへのリンク（#28） |
 | `/books` 一覧（4 ステータスタブ） | ✅ | `BookCard`（書影・タイトル・著者・★評価の表示・ステータスバッジ・開始/読了日）、タブの件数表示、空状態から `/books/add` への導線、`loading.tsx` + `Skeleton`。ページは `books/(list)/` に置き、スケルトンが詳細などに出ないようにした（#7）。★の編集は #11 |
 | `/books/[id]` 詳細、6 種別メモ CRUD、action 完了トグル | 🟡 | 詳細の取得と表示のみ。メモ UI 未作成 |
 | ステータス遷移 UI（日付自動セット、`reading_histories` 追加） | ✅ | 一覧の BookCard と詳細でステータスを変更（`updateStatus`）。遷移ルールは `lib/books/status.ts`。`completed` で `reading_histories` に 1 行追加（登録時も）、再読は `started_at` を今日・`completed_at` を NULL に。詳細に日付の手修正（最新の履歴にも反映）と再読履歴の一覧（#9） |
@@ -155,7 +155,7 @@ book_manager_web/
 │   ├── books/google-books.ts         ✅ 優先。categories 取得、http→https
 │   ├── books/openbd.ts               ✅ 補完。ONIX ベースの著者整形、複数 ISBN 一括取得（fetchManyFromOpenBd）
 │   ├── books/ndl.ts                  ✅ NDL サーチ OpenSearch（title → creator → any、RSS を正規表現で解析）
-│   ├── books/text-search.ts          ✅ 自由記述検索の取得戦略（Google → NDL + OpenBD 補完、重複排除）
+│   ├── books/text-search.ts          ✅ 自由記述検索の取得戦略（Google → 楽天 → NDL、OpenBD 補完、重複排除）
 │   ├── books/search.ts               ✅ Google → OpenBD の取得戦略 + 書影が無ければ Google 書影配信
 │   ├── books/google-cover.ts         ✅ ISBN → Google 書影配信 URL。プレースホルダー画像をハッシュで除外、並列 8 で補完
 │   ├── books/schema.ts               ✅ Zod: bookMetadataSchema / createUserBookSchema / manualBookFormSchema、STATUS_LABELS、toPostgresDate

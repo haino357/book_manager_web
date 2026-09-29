@@ -1,7 +1,5 @@
 import { createHash } from "node:crypto";
 
-import type { BookMetadata } from "./types";
-
 /**
  * Google Books の書影配信 URL（Books API とは別系統で、API クォータを消費しない）。
  * 存在しない ISBN でも 200 で「画像なし」のプレースホルダー画像が返るため、
@@ -18,7 +16,6 @@ const MIN_COVER_BYTES = 2000;
 /** 実在しない ISBN（チェックデジットは正しい）。プレースホルダーの現在のハッシュを取るために使う */
 const PROBE_ISBN = "9784999999995";
 
-const CONCURRENCY = 8;
 const REVALIDATE = 60 * 60 * 24 * 7;
 
 let placeholderProbe: Promise<void> | null = null;
@@ -58,27 +55,4 @@ export async function resolveGoogleCover(isbn13: string): Promise<string | null>
   if (buf.byteLength < MIN_COVER_BYTES) return null;
   if (KNOWN_PLACEHOLDER_HASHES.has(hashOf(buf))) return null;
   return url;
-}
-
-/**
- * 書影の無い本に Google の書影を補完する（ISBN 無し・既に書影ありはそのまま）。
- * 同時実行数を抑えつつ並列に解決する。
- */
-export async function fillMissingCovers(items: BookMetadata[]): Promise<BookMetadata[]> {
-  const targets = items
-    .map((b, i) => ({ b, i }))
-    .filter(({ b }) => !b.coverUrl && b.isbn13);
-  if (targets.length === 0) return items;
-
-  const resolved = new Map<number, string | null>();
-  for (let start = 0; start < targets.length; start += CONCURRENCY) {
-    const chunk = targets.slice(start, start + CONCURRENCY);
-    const urls = await Promise.all(chunk.map(({ b }) => resolveGoogleCover(b.isbn13!)));
-    chunk.forEach(({ i }, k) => resolved.set(i, urls[k]));
-  }
-
-  return items.map((b, i) => {
-    const url = resolved.get(i);
-    return url ? { ...b, coverUrl: url } : b;
-  });
 }

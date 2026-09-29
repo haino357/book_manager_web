@@ -8,12 +8,13 @@ import { normalizeIsbn } from "./types";
  */
 
 export const BOOK_STATUSES = ["wishlist", "unread", "reading", "completed"] as const;
-export const BOOK_SOURCES = ["google_books", "openbd", "ndl", "manual"] as const;
+export const BOOK_SOURCES = ["google_books", "openbd", "ndl", "rakuten", "manual"] as const;
 
 export const SOURCE_LABELS: Record<(typeof BOOK_SOURCES)[number], string> = {
   google_books: "Google Books",
   openbd: "OpenBD",
   ndl: "NDL サーチ",
+  rakuten: "楽天ブックス",
   manual: "手動",
 };
 

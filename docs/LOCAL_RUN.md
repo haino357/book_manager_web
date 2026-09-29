@@ -35,6 +35,18 @@ supabase_db_book_manager_web container is not ready: starting
 数秒待ってから `npx supabase status` を実行し、URL の一覧が表示されれば起動済み。改めて `db:start` を実行する必要はない。
 `Stopped services: [imgproxy, edge_runtime, pooler]` と表示されるが、このアプリでは使わないので問題ない。
 
+## 外部 API のキー（任意）
+
+`.env.local` に設定すると検索が良くなる。どれも未設定でも動く（キーの無い API だけで探す）。変更したら `npm run dev` を再起動する。
+
+| 変数 | 取得先 | 未設定のとき |
+|---|---|---|
+| `GOOGLE_BOOKS_API_KEY` | [Google Cloud Console](https://console.cloud.google.com/apis/library/books.googleapis.com) で Books API を有効にして API キーを作る（1 日 1,000 回まで無料） | キー無しの共有枠はほぼ常に 429 になり、楽天 / NDL サーチにフォールバックする |
+| `RAKUTEN_APPLICATION_ID` / `RAKUTEN_ACCESS_KEY` | [楽天ウェブサービス](https://webservice.rakuten.co.jp/) でアプリを登録し、アプリ ID とアクセスキーを取得 | 楽天ブックスを使わない |
+| `AMAZON_ASSOCIATE_TAG` | Amazon アソシエイトのトラッキング ID（例: `xxxx-22`） | Amazon へのリンクはタグ無し。設定するとフッターにアソシエイトの表示が出る。営利目的になるので NDL の書影 API は申請が必要 |
+
+どれもサーバー側だけで使う（`NEXT_PUBLIC_` を付けない）。
+
 ## ログイン
 
 ローカル DB に検証用のユーザーがいる。
