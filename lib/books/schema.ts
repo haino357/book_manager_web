@@ -50,6 +50,27 @@ export const createUserBookSchema = z.object({
 
 export type CreateUserBookInput = z.infer<typeof createUserBookSchema>;
 
+export const updateStatusSchema = z.object({
+  userBookId: z.string().uuid(),
+  status: bookStatusSchema,
+});
+
+/**
+ * 読書日付の手入力（<input type="date"> の値。空文字は未入力）。
+ * 両方あるときは 読了日 >= 開始日。
+ */
+export const readingDatesFormSchema = z
+  .object({
+    startedAt: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "日付の形式が正しくありません"),
+    completedAt: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "日付の形式が正しくありません"),
+  })
+  .refine((v) => !v.startedAt || !v.completedAt || v.startedAt <= v.completedAt, {
+    message: "読了日は開始日以降にしてください",
+    path: ["completedAt"],
+  });
+
+export type ReadingDatesFormValues = z.infer<typeof readingDatesFormSchema>;
+
 /**
  * 手動入力フォームの値（フォーム上は文字列で扱い、送信時に BookMetadata へ変換する）。
  * 空文字は「未入力」とみなして null に落とす。

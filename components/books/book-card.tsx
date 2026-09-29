@@ -2,8 +2,8 @@ import { StarIcon } from "lucide-react";
 import Link from "next/link";
 
 import { BookCover } from "@/components/books/book-cover";
-import { Badge } from "@/components/ui/badge";
-import { STATUS_LABELS } from "@/lib/books/schema";
+import { UserBookStatusSelect } from "@/components/books/user-book-status-select";
+import { formatDate } from "@/lib/dates";
 import type { BookStatus } from "@/lib/types/enums";
 import { cn } from "@/lib/utils";
 
@@ -21,11 +21,9 @@ type Props = {
   } | null;
 };
 
-/** date 列（YYYY-MM-DD）を YYYY/MM/DD で表示 */
-const formatDate = (d: string) => d.replaceAll("-", "/");
-
 /**
- * 蔵書一覧の 1 冊。書影・タイトル・著者・★評価・ステータスバッジ・読書日付。
+ * 蔵書一覧の 1 冊。書影・タイトル・著者・★評価・ステータス・読書日付。
+ * ステータスはカード上のセレクトから直接変更できる（日付の自動セットは updateStatus）。
  * 評価の編集は詳細画面（#11 の RatingStars）で行い、ここでは表示のみ。
  */
 export function BookCard({ userBookId, status, rating, startedAt, completedAt, book }: Props) {
@@ -53,7 +51,13 @@ export function BookCard({ userBookId, status, rating, startedAt, completedAt, b
         </p>
         {rating != null && <RatingDisplay rating={rating} />}
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-          <Badge variant="secondary">{STATUS_LABELS[status]}</Badge>
+          {/* カード全体のリンク（after:）より前面に出してクリックを奪われないようにする */}
+          <UserBookStatusSelect
+            userBookId={userBookId}
+            status={status}
+            size="sm"
+            className="relative z-10 w-28"
+          />
           {dates && <span className="text-xs text-muted-foreground">{dates}</span>}
         </div>
       </div>

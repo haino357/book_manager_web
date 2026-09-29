@@ -15,18 +15,19 @@ type Props = {
   onChange: (value: BookStatus) => void;
   id?: string;
   disabled?: boolean;
+  size?: "sm" | "default";
   className?: string;
 };
 
 /** 4 ステータス（wishlist / unread / reading / completed）の選択 */
-export function StatusSelect({ value, onChange, id, disabled, className }: Props) {
+export function StatusSelect({ value, onChange, id, disabled, size, className }: Props) {
   return (
     <Select
       value={value}
       onValueChange={(v) => onChange(v as BookStatus)}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className={className ?? "w-40"}>
+      <SelectTrigger id={id} size={size} className={className ?? "w-40"}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
