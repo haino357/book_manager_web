@@ -87,7 +87,7 @@ plan: ../../book-manager-web-mvp-plan.md
 | 自由記述検索 `/books/search`（プラン外・モバイル #7 相当、Web #20） | ✅ | 検索欄は `/books/add` タブとヘッダーナビ「検索」から。結果カードでステータスを選んでそのまま登録。`books.source` に `ndl` を追加（`00002`） |
 | `/books` 一覧（4 ステータスタブ） | ✅ | `BookCard`（書影・タイトル・著者・★評価の表示・ステータスバッジ・開始/読了日）、タブの件数表示、空状態から `/books/add` への導線、`loading.tsx` + `Skeleton`。ページは `books/(list)/` に置き、スケルトンが詳細などに出ないようにした（#7）。★の編集は #11 |
 | `/books/[id]` 詳細、6 種別メモ CRUD、action 完了トグル | 🟡 | 詳細の取得と表示のみ。メモ UI 未作成 |
-| ステータス遷移 UI（日付自動セット、`reading_histories` 追加） | 🟡 | 登録時のみ実装: `reading` → `started_at` = 今日（JST）、`completed` → `completed_at` = 今日。遷移 UI と `reading_histories` は #9 |
+| ステータス遷移 UI（日付自動セット、`reading_histories` 追加） | ✅ | 一覧の BookCard と詳細でステータスを変更（`updateStatus`）。遷移ルールは `lib/books/status.ts`。`completed` で `reading_histories` に 1 行追加（登録時も）、再読は `started_at` を今日・`completed_at` を NULL に。詳細に日付の手修正（最新の履歴にも反映）と再読履歴の一覧（#9） |
 | `/import`：#24 JSON → v2 スキーマ変換 | 🟡 | 変換ロジック（`lib/import/mobile-export.ts`）は暫定形で実装済み。UI と投入処理は未作成 |
 
 ### M3：評価 + 統計
