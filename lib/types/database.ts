@@ -243,6 +243,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_my_account: { Args: never; Returns: undefined }
       fill_book_details: {
         Args: {
           p_book_id: string
