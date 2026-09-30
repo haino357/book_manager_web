@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
+import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 
 import "./globals.css";
 
@@ -16,11 +17,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // OGP 画像などの相対 URL を絶対 URL にする基準
+  metadataBase: new URL(siteUrl()),
   title: {
-    default: "Book Manager",
-    template: "%s | Book Manager",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "読書管理 Web — 蔵書登録・ステータス管理・メモ・統計",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    locale: "ja_JP",
+    url: "/",
+  },
+  twitter: { card: "summary_large_image" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
