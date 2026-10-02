@@ -2,7 +2,18 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** 未ログインでもアクセスできるパス */
-const PUBLIC_PATHS = ["/", "/privacy", "/support", "/login", "/signup", "/auth"];
+const PUBLIC_PATHS = [
+  "/",
+  "/privacy",
+  "/terms",
+  "/support",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  // リカバリーのセッションが無いときはページ側で /forgot-password に戻す
+  "/reset-password",
+  "/auth",
+];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(

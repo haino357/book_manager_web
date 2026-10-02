@@ -62,7 +62,17 @@ export function AuthForm({ mode, message }: Props) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">パスワード</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">パスワード</Label>
+              {isLogin && (
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                >
+                  パスワードを忘れた方
+                </Link>
+              )}
+            </div>
             <Input
               id="password"
               name="password"
@@ -75,8 +85,9 @@ export function AuthForm({ mode, message }: Props) {
           {state?.error && (
             <p className="text-sm text-destructive">{state.error}</p>
           )}
+          {!isLogin && <ConsentNote />}
           <Button type="submit" className="w-full" disabled={pending}>
-            {isLogin ? "ログイン" : "登録する"}
+            {isLogin ? "ログイン" : "同意して登録する"}
           </Button>
         </form>
 
@@ -88,7 +99,7 @@ export function AuthForm({ mode, message }: Props) {
 
         <form action={signInWithGoogle}>
           <Button type="submit" variant="outline" className="w-full">
-            Google でログイン
+            {isLogin ? "Google でログイン" : "同意して Google で登録"}
           </Button>
         </form>
       </CardContent>
@@ -110,5 +121,22 @@ export function AuthForm({ mode, message }: Props) {
         )}
       </CardFooter>
     </Card>
+  );
+}
+
+/** 登録時の同意の文言（#36）。メール登録・Google 登録の両方に掛かる */
+function ConsentNote() {
+  return (
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      登録すると、
+      <Link href="/terms" target="_blank" className="underline underline-offset-2">
+        利用規約
+      </Link>
+      と
+      <Link href="/privacy" target="_blank" className="underline underline-offset-2">
+        プライバシーポリシー
+      </Link>
+      に同意したものとみなします。
+    </p>
   );
 }

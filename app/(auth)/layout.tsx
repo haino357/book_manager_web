@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { SiteFooterLinks } from "@/components/site-footer";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
@@ -7,6 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         Book Manager
       </Link>
       <div className="w-full max-w-sm">{children}</div>
+      <SiteFooterLinks className="mt-8 text-xs text-muted-foreground" />
     </div>
   );
 }

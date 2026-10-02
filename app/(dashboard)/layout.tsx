@@ -12,6 +12,7 @@ const NAV = [
   { href: "/books/add", label: "登録" },
   { href: "/dashboard", label: "統計" },
   { href: "/import", label: "インポート" },
+  { href: "/settings", label: "設定" },
 ] as const;
 
 export default async function DashboardLayout({

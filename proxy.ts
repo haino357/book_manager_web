@@ -11,9 +11,10 @@ export const config = {
   matcher: [
     /*
      * 以下を除く全パス:
-     * - _next/static, _next/image, favicon.ico
+     * - _next/static, _next/image
+     * - メタデータのファイル（icon / apple-icon / opengraph-image / robots.txt / sitemap.xml）
      * - 画像などの静的ファイル
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|icon|apple-icon|opengraph-image|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
