@@ -20,6 +20,11 @@
 - 外部 API の書影 URL をそのまま保存する。Supabase Storage は使わない。書影が無い本は NDL サーチの書影 API（`lib/books/ndl-cover.ts`）→ Google の書影配信 URL（`lib/books/google-cover.ts`、プレースホルダー画像はハッシュで除外）の順に補完する（`lib/books/covers.ts`）。NDL の書影 API は営利目的なら申請が必要
 - 認証必須ページは `app/(dashboard)/`、未ログイン可は `app/(public)/` と `app/(auth)/`。公開パスは `lib/supabase/proxy.ts` の `PUBLIC_PATHS` で管理
 
+## ブランチと PR
+- 修正・機能追加は、必ず main から作業ブランチを切って対応する（例: `feat/41-stack-visual`、`fix/…`、`docs/…`）。`main` に直接コミット・push しない
+- ブランチは `git switch -c <name> --no-track origin/main` で作る。`origin/main` を追跡したままだと、引数なしの `git push` が `main` に送られる
+- push は `git push -u origin <branch>` とブランチ名を明示し、`main` へは PR のマージで入れる
+
 ## コマンド
 - `npm run dev` / `npm run build` / `npm run lint` / `npm run typecheck`
 - `npm run db:start` → ローカル Supabase（Docker 必須）、`npm run db:reset` → マイグレーション + seed 再適用
