@@ -135,3 +135,17 @@
     @apply font-sans;
   }
 }
+/* 統計ダッシュボード: 読了本の柱が下から伸びる（#41）。動きを減らす設定のときは出さない */
+@media (prefers-reduced-motion: no-preference) {
+  .stack-grow {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    animation: stack-grow 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes stack-grow {
+  from {
+    transform: scaleY(0);
+  }
+}

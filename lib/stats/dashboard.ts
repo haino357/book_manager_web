@@ -196,30 +196,3 @@ export function readStack(rows: StatsRow[]): StackSummary {
   }
   return { books: read.length, pages, unknown, heightMm: (pages / 2) * SHEET_THICKNESS_MM };
 }
-
-/** 1234 mm → "1.23 m"、56 mm → "5.6 cm" */
-export function formatHeight(mm: number): string {
-  if (mm >= 1000) return `${(mm / 1000).toLocaleString("ja-JP", { maximumFractionDigits: 2 })} m`;
-  return `${(mm / 10).toLocaleString("ja-JP", { maximumFractionDigits: 1 })} cm`;
-}
-
-const LANDMARKS = [
-  { name: "大人の身長", m: 1.7 },
-  { name: "奈良の大仏", m: 15 },
-  { name: "東京タワー", m: 333 },
-  { name: "東京スカイツリー", m: 634 },
-  { name: "富士山", m: 3776 },
-] as const;
-
-/** 身近なものとの比較。「東京タワー（333 m）の 1.2 倍」「大人の身長（1.7 m）の 35%」 */
-export function compareHeight(mm: number): string | null {
-  if (mm <= 0) return null;
-  const m = mm / 1000;
-  const below = [...LANDMARKS].reverse().find((l) => l.m <= m);
-  const fmt = (n: number) => n.toLocaleString("ja-JP", { maximumFractionDigits: 1 });
-  if (!below) {
-    const first = LANDMARKS[0];
-    return `${first.name}（${fmt(first.m)} m）の ${Math.max(1, Math.round((m / first.m) * 100))}%`;
-  }
-  return `${below.name}（${fmt(below.m)} m）の ${fmt(m / below.m)} 倍`;
-}
