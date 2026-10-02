@@ -2,18 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { amazonAssociateTag } from "@/lib/books/store-links";
 import { signOut } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
-
-const NAV = [
-  { href: "/books", label: "蔵書" },
-  { href: "/books/search", label: "検索" },
-  { href: "/books/add", label: "登録" },
-  { href: "/dashboard", label: "統計" },
-  { href: "/import", label: "インポート" },
-  { href: "/settings", label: "設定" },
-] as const;
 
 export default async function DashboardLayout({
   children,
@@ -29,25 +21,21 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <nav className="flex items-center gap-1">
-            <Link href="/books" className="mr-4 font-semibold">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="flex min-h-14 items-center justify-between gap-3">
+            <Link href="/books" className="shrink-0 font-semibold">
               Book Manager
             </Link>
-            {NAV.map((item) => (
-              <Button key={item.href} asChild variant="ghost" size="sm">
-                <Link href={item.href}>{item.label}</Link>
+            <form action={signOut} className="flex min-w-0 items-center gap-3">
+              <span className="hidden max-w-64 truncate text-sm text-muted-foreground sm:inline">
+                {user.email}
+              </span>
+              <Button type="submit" variant="outline" size="sm" className="shrink-0">
+                ログアウト
               </Button>
-            ))}
-          </nav>
-          <form action={signOut} className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {user.email}
-            </span>
-            <Button type="submit" variant="outline" size="sm">
-              ログアウト
-            </Button>
-          </form>
+            </form>
+          </div>
+          <DashboardNav />
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">

@@ -37,7 +37,8 @@ export function YearlyGoalProgress({ year, completed, goal }: Props) {
             aria-label="年間目標の達成度"
             aria-valuemin={0}
             aria-valuemax={goal}
-            aria-valuenow={completed}
+            aria-valuenow={Math.min(completed, goal)}
+            aria-valuetext={`${goal} 冊の目標に対して ${completed} 冊読了、達成率 ${percent}%`}
           >
             <div className="h-full rounded-full bg-viz-series" style={{ width: `${ratio * 100}%` }} />
           </div>

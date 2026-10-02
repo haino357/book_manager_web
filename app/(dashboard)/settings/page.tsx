@@ -22,7 +22,7 @@ export default async function SettingsPage() {
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">アカウント</h2>
-        <p className="text-sm text-muted-foreground">メールアドレス: {user?.email}</p>
+        <p className="break-all text-sm text-muted-foreground">メールアドレス: {user?.email}</p>
       </section>
 
       <section className="space-y-3">
