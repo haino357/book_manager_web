@@ -25,10 +25,10 @@ export function AddBook() {
 
   return (
     <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-      <TabsList>
-        <TabsTrigger value="isbn">ISBN で検索</TabsTrigger>
-        <TabsTrigger value="keyword">タイトル・著者で検索</TabsTrigger>
-        <TabsTrigger value="manual">手動で入力</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-3 group-data-horizontal/tabs:h-auto sm:w-fit">
+        <TabsTrigger value="isbn" className="min-h-11 whitespace-normal">ISBN で検索</TabsTrigger>
+        <TabsTrigger value="keyword" className="min-h-11 whitespace-normal">タイトル・著者で検索</TabsTrigger>
+        <TabsTrigger value="manual" className="min-h-11 whitespace-normal">手動で入力</TabsTrigger>
       </TabsList>
       <TabsContent value="isbn" className="pt-4">
         <IsbnSearchForm onSwitchToManual={switchToManual} />
@@ -36,7 +36,7 @@ export function AddBook() {
       <TabsContent value="keyword" className="space-y-2 pt-4">
         <SearchBox autoFocus />
         <p className="text-xs text-muted-foreground">
-          Google Books（なければ NDL サーチ）から候補を一覧し、選んで登録します。
+          Google Books・楽天ブックス・NDL サーチから候補を探し、選んで登録します。
         </p>
       </TabsContent>
       <TabsContent value="manual" className="pt-4">

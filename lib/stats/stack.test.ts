@@ -47,6 +47,15 @@ describe("compareHeight", () => {
     expect(compareHeight(850)).toBe("大人の身長（1.7 m）の 50%");
   });
 
+  it.each([
+    [0.05, "1% 未満"],
+    [16, "1% 未満"],
+    [17, "1%"],
+    [1699, "99%"],
+  ])("%d mm の割合を切り上げて到達済みに見せない", (mm, percent) => {
+    expect(compareHeight(mm)).toBe(`大人の身長（1.7 m）の ${percent}`);
+  });
+
   it("目印より高ければ、一つ下の目印の何倍か", () => {
     expect(compareHeight(333_000)).toBe("東京タワー（333 m）の 1 倍");
   });

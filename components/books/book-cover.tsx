@@ -1,4 +1,7 @@
+"use client";
+
 import { BookOpenIcon } from "lucide-react";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,26 +13,31 @@ type Props = {
 
 /**
  * 書影。外部 API の URL をそのまま表示する（ホストが不定なので next/image は使わない）。
- * URL が無い場合はプレースホルダー。
+ * URL が無い・読み込めない場合はプレースホルダー。表紙全体が見えるよう縦横比を保つ。
  */
 export function BookCover({ src, title, className }: Props) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const showImage = !!src && src !== failedSrc;
   return (
     <div
       className={cn(
-        "flex aspect-[2/3] w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted",
+        "flex aspect-[2/3] w-24 shrink-0 self-start items-center justify-center overflow-hidden rounded-md border bg-muted",
         className,
       )}
     >
-      {src ? (
+      {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- 書影のホストは Google Books / OpenBD / 手動入力で不定
         <img
           src={src}
           alt={`${title} の書影`}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           loading="lazy"
+          onError={() => setFailedSrc(src)}
         />
       ) : (
-        <BookOpenIcon className="size-8 text-muted-foreground" aria-hidden />
+        <span role="img" aria-label={`${title} の書影なし`}>
+          <BookOpenIcon className="size-8 text-muted-foreground" aria-hidden />
+        </span>
       )}
     </div>
   );

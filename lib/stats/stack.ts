@@ -80,7 +80,8 @@ export function compareHeight(mm: number): string | null {
   const { below } = landmarksAround(mm);
   if (!below) {
     const first = LANDMARKS[0];
-    return `${first.name}（${formatLandmark(first)}）の ${Math.max(1, Math.round((m / first.m) * 100))}%`;
+    const percent = (m / first.m) * 100;
+    return `${first.name}（${formatLandmark(first)}）の ${percent < 1 ? "1% 未満" : `${Math.floor(percent)}%`}`;
   }
   return `${below.name}（${formatLandmark(below)}）の ${fmt(m / below.m)} 倍`;
 }

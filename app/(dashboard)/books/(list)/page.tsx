@@ -46,9 +46,9 @@ export default async function BooksPage({ searchParams }: PageProps<"/books">) {
         </Button>
       </div>
       <Tabs value={status}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4 group-data-horizontal/tabs:h-auto sm:w-fit">
           {BOOK_STATUSES.map((s) => (
-            <TabsTrigger key={s} value={s} asChild>
+            <TabsTrigger key={s} value={s} asChild className="min-h-11 flex-wrap">
               <Link href={`/books?status=${s}`}>
                 {STATUS_LABELS[s]}
                 <span className="text-xs tabular-nums text-muted-foreground">{counts[s]}</span>
