@@ -47,16 +47,15 @@ supabase_db_book_manager_web container is not ready: starting
 
 どれもサーバー側だけで使う（`NEXT_PUBLIC_` を付けない）。
 
+ほかに `NEXT_PUBLIC_SUPPORT_EMAIL`（`/support` `/privacy` の問い合わせ先）と `SENTRY_*`（エラー送信）があるが、ローカルでは未設定でよい。全体の一覧は `docs/DEPLOY.md` を参照。
+
 ## ログイン
 
-ローカル DB に検証用のユーザーがいる。
+seed（`supabase/seed.sql`）に入っているのは書籍マスターだけで、ユーザーはいない。
+http://localhost:3000/signup から `@example.test` のアドレスでアカウントを作る（ローカルはメール確認なしで、そのままログインになる）。
 
-| メール | パスワード |
-|---|---|
-| `test@example.com` | `Passw0rd!test` |
-
-`/signup` から新しく作ってもよい（ローカルはメール確認なしで即ログインになる）。
-`npm run db:reset` をすると seed 以外のデータ（このユーザーを含む）は消える。
+- 確認が終わったら、設定画面（`/settings`）から退会させる
+- `npm run db:reset` をすると seed 以外のデータ（作ったアカウントを含む）は消える
 
 ## URL 一覧
 
@@ -81,6 +80,7 @@ npx supabase stop   # Supabase のコンテナを停止（データは次回の 
 ```bash
 npm run typecheck
 npm run lint
+npm test
 npm run build
 ```
 

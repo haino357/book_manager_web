@@ -5,41 +5,41 @@
 
 ## セットアップ
 
-1. 依存インストール
+開発はローカルの Supabase（Docker + Supabase CLI）で行う。
+
+| 資料 | 内容 |
+|---|---|
+| [docs/LOCAL_DEV_SETUP.md](docs/LOCAL_DEV_SETUP.md) | 初回の環境構築（Docker、`.env.local`、`config.toml`、型生成） |
+| [docs/LOCAL_RUN.md](docs/LOCAL_RUN.md) | 毎日の起動・停止、ログイン、URL 一覧、うまく動かないとき |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | 本番（Vercel + Supabase）へのデプロイと環境変数の一覧 |
+
+初回の流れ:
+
+```bash
+npm install
+open -a Docker                       # Docker Desktop が起動していなければ
+npm run db:start                     # ローカル Supabase。マイグレーションと seed も適用される
+cp .env.local.example .env.local     # npx supabase status の URL / anon key を書き込む
+npm run dev                          # http://localhost:3000
+```
+
+`/signup` から `@example.test` のアドレスでアカウントを作ってログインする（ローカルはメール確認なし）。
+
+### クラウドの Supabase プロジェクトを使う場合
+
+1. Supabase プロジェクトを作成し、`.env.local` に URL / anon key を設定する（`.env.local.example` 参照）
+2. マイグレーションを適用する
 
    ```bash
-   npm install
-   ```
-
-2. Supabase プロジェクトを作成し、`.env.local` に URL / anon key を設定する（`.env.local.example` 参照）
-
-3. マイグレーションを適用する
-
-   ```bash
-   # ローカル（Docker 必須）
-   npm run db:start
-   npm run db:reset
-
-   # またはリモートプロジェクトへ
    npx supabase link --project-ref <project-ref>
    npm run db:push
    ```
 
-4. 型を生成する
-
-   ```bash
-   npm run gen:types          # ローカル DB から
-   # npx supabase gen types typescript --linked > lib/types/database.ts   # リモートから
-   ```
-
-5. Supabase ダッシュボード > Authentication > URL Configuration に
+3. Supabase ダッシュボード > Authentication > URL Configuration に
    `http://localhost:3000/auth/callback` を Redirect URL として追加する（Google OAuth を使う場合はプロバイダも有効化）
+4. `npm run dev` で起動する
 
-6. 起動
-
-   ```bash
-   npm run dev
-   ```
+型は `npm run gen:types`（ローカル DB から生成）で作り直す。`lib/types/database.ts` は手で編集しない。
 
 ## ディレクトリ
 

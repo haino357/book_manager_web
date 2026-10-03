@@ -134,7 +134,7 @@ npm run gen:types   # = supabase gen types typescript --local > lib/types/databa
 のエイリアスが手書きされていた。生成物にはこれらが含まれない（DB 側が enum ではなく `check` 制約のため
 `Enums` は空になる）ので、typecheck が失敗した。
 
-対応として `lib/types/enums.ts` を新設し、エイリアスをそこへ移した。
+対応として `lib/types/enums.ts` を新設し、エイリアスをそこへ移した（下は当時の内容。今の値は `lib/types/enums.ts` を見る）。
 
 ```ts
 // lib/types/enums.ts
@@ -177,6 +177,7 @@ Node から `@supabase/supabase-js` を使って、ローカル Supabase に対�
 
 検証で作成したテストユーザーがローカル DB に残っている（`dev-check-…` `browser-check-…` と、ブラウザ確認用の `test@example.com` / `Passw0rd!test`）。
 `test@example.com` の本棚には M2 の検証で登録した本が数冊入っている。まっさらにしたいときは `npm run db:reset`（seed 以外すべて消える）。
+これらのユーザーは seed に無いので、新しく clone した環境にはいない。今はテスト用アカウントを `@example.test` で作り、確認後に退会させる（`docs/LOCAL_RUN.md` の「ログイン」）。
 
 ---
 
