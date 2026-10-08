@@ -8,7 +8,7 @@ type ReadingDates = {
 /**
  * ステータス変更時に user_books へ書き込む日付の差分。
  * - → reading: started_at が空なら今日。completed からの再読なら started_at を今日で上書きし completed_at を NULL に
- * - → completed: completed_at を今日に（reading_histories への追加は呼び出し側）
+ * - → completed: completed_at を今日に（reading_histories への追加は RPC change_user_book_status）
  * - → wishlist / unread: 日付は触らない
  */
 export function statusTransitionPatch(
