@@ -35,6 +35,7 @@ export type ActionResult = { error?: string };
  * 1. books を isbn13 で重複排除（あれば再利用、なければ insert。isbn13 が NULL なら常に insert）
  * 2. user_books を insert（unique (user_id, book_id) 違反は「すでに登録済み」）
  * 3. completed で登録したら reading_histories にも 1 行追加（月別読了数の集計対象にする）
+ *    2 と 3 は RPC add_user_book が一つのトランザクションで行う（#47）
  * 4. revalidatePath("/books") → /books/[id] へ遷移
  *
  * 画面遷移せずに登録したいとき（検索結果から登録）は addUserBook を使う。
@@ -136,19 +137,15 @@ async function insertUserBook(
 
   if (!bookId) return { error: "書籍の保存に失敗しました" };
 
-  // --- 2. user_books ----------------------------------------------------
+  // --- 2. user_books（completed なら reading_histories も同じトランザクションで足す）---
   const today = todayJst();
-  const { data: userBook, error: ubError } = await supabase
-    .from("user_books")
-    .insert({
-      user_id: user.id,
-      book_id: bookId,
-      status,
-      started_at: status === "reading" ? today : null,
-      completed_at: status === "completed" ? today : null,
-    })
-    .select("id")
-    .single();
+  // RPC の日付の引数は既定値が NULL。空の日付は undefined にして送らない（以下の RPC も同じ）
+  const { data: userBookId, error: ubError } = await supabase.rpc("add_user_book", {
+    p_book_id: bookId,
+    p_status: status,
+    p_started_at: status === "reading" ? today : undefined,
+    p_completed_at: status === "completed" ? today : undefined,
+  });
 
   if (ubError) {
     if (ubError.code === "23505") {
@@ -164,6 +161,7 @@ async function insertUserBook(
     }
     return { error: `登録に失敗しました: ${ubError.message}` };
   }
+  if (!userBookId) return { error: "登録に失敗しました" };
 
   // 既存の books 行を再利用した場合、空のページ数・定価を今回の検索結果で埋める。
   // fill_book_details は自分の本棚にある本だけ更新するので、user_books の insert 後に呼ぶ
@@ -176,21 +174,14 @@ async function insertUserBook(
     if (fillError) console.error("fill_book_details failed", fillError);
   }
 
-  // --- 3. reading_histories -------------------------------------------
-  if (status === "completed") {
-    const { error: historyError } = await supabase
-      .from("reading_histories")
-      .insert({ user_book_id: userBook.id, started_at: null, completed_at: today });
-    // 登録自体は成功しているので、履歴の失敗では止めずに詳細へ進む
-    if (historyError) console.error("reading_histories insert failed", historyError);
-  }
-
-  return { userBookId: userBook.id };
+  return { userBookId };
 }
 
 /**
  * ステータスを変更し、日付を自動でセットする（ルールは statusTransitionPatch）。
  * → completed のときは reading_histories に 1 行追加する（started_at / completed_at を写す）。
+ * 更新と履歴の追加は RPC change_user_book_status が一つのトランザクションで行うので、
+ * 履歴だけ失敗してステータスが残ることはない（#47）。
  */
 export async function updateStatus(
   userBookId: string,
@@ -216,22 +207,28 @@ export async function updateStatus(
     today,
   );
 
-  const { error } = await supabase
-    .from("user_books")
-    .update({ status, ...patch })
-    .eq("id", userBookId);
+  const next = { ...current, ...patch };
+
+  const { data: applied, error } = await supabase.rpc("change_user_book_status", {
+    p_user_book_id: userBookId,
+    p_from_status: current.status,
+    p_to_status: status,
+    p_started_at: next.started_at ?? undefined,
+    p_completed_at: next.completed_at ?? undefined,
+  });
   if (error) return { error: `ステータスの更新に失敗しました: ${error.message}` };
 
-  if (status === "completed") {
-    const { error: historyError } = await supabase.from("reading_histories").insert({
-      user_book_id: userBookId,
-      started_at: current.started_at,
-      completed_at: today,
-    });
-    if (historyError) {
-      revalidateUserBook(userBookId);
-      return { error: `ステータスは更新しましたが、読書履歴の追加に失敗しました: ${historyError.message}` };
-    }
+  if (!applied) {
+    // 読んでから保存するまでに、別の画面（別のタブなど）でステータスが変わった
+    const { data: latest } = await supabase
+      .from("user_books")
+      .select("status")
+      .eq("id", userBookId)
+      .maybeSingle();
+    revalidateUserBook(userBookId);
+    // 同じステータスにする操作が先に済んでいたなら、成功として扱う（履歴は先の 1 件だけ）
+    if (latest?.status === status) return {};
+    return { error: "ほかの画面でステータスが変わりました。画面を読み込み直してください" };
   }
 
   revalidateUserBook(userBookId);
@@ -241,6 +238,7 @@ export async function updateStatus(
 /**
  * 開始日・読了日を手で直す。
  * 読了済みなら、最新の reading_histories（今回の読書）にも同じ日付を反映する。
+ * 両方の更新は RPC update_reading_dates が一つのトランザクションで行う（#47）。
  */
 export async function updateReadingDates(
   userBookId: string,
@@ -254,34 +252,13 @@ export async function updateReadingDates(
   const completedAt = parsed.data.completedAt || null;
 
   const supabase = await createClient();
-  const { data: updated, error } = await supabase
-    .from("user_books")
-    .update({ started_at: startedAt, completed_at: completedAt })
-    .eq("id", userBookId)
-    .select("status")
-    .maybeSingle();
+  const { data: updated, error } = await supabase.rpc("update_reading_dates", {
+    p_user_book_id: userBookId,
+    p_started_at: startedAt ?? undefined,
+    p_completed_at: completedAt ?? undefined,
+  });
   if (error) return { error: `日付の更新に失敗しました: ${error.message}` };
   if (!updated) return { error: "本が見つかりません" };
-
-  if (updated.status === "completed") {
-    const { data: latest } = await supabase
-      .from("reading_histories")
-      .select("id")
-      .eq("user_book_id", userBookId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (latest) {
-      const { error: historyError } = await supabase
-        .from("reading_histories")
-        .update({ started_at: startedAt, completed_at: completedAt })
-        .eq("id", latest.id);
-      if (historyError) {
-        revalidateUserBook(userBookId);
-        return { error: `日付は更新しましたが、読書履歴への反映に失敗しました: ${historyError.message}` };
-      }
-    }
-  }
 
   revalidateUserBook(userBookId);
   return {};
