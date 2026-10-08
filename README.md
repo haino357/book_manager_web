@@ -12,6 +12,7 @@
 | [docs/LOCAL_DEV_SETUP.md](docs/LOCAL_DEV_SETUP.md) | 初回の環境構築（Docker、`.env.local`、`config.toml`、型生成） |
 | [docs/LOCAL_RUN.md](docs/LOCAL_RUN.md) | 毎日の起動・停止、ログイン、URL 一覧、うまく動かないとき |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | 本番（Vercel + Supabase）へのデプロイと環境変数の一覧 |
+| [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) | ホスティングなどを Cloudflare に移すための調査と、必要な変更 |
 
 初回の流れ:
 
