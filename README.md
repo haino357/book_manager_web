@@ -9,6 +9,7 @@
 
 | 資料 | 内容 |
 |---|---|
+| [docs/RELEASE_PLAN.md](docs/RELEASE_PLAN.md) | リリースまでの工程・優先順位・依存関係・公開条件 |
 | [docs/LOCAL_DEV_SETUP.md](docs/LOCAL_DEV_SETUP.md) | 初回の環境構築（Docker、`.env.local`、`config.toml`、型生成） |
 | [docs/LOCAL_RUN.md](docs/LOCAL_RUN.md) | 毎日の起動・停止、ログイン、URL 一覧、うまく動かないとき |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | 本番（Vercel + Supabase）へのデプロイと環境変数の一覧 |
