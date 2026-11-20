@@ -243,6 +243,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_user_book: {
+        Args: {
+          p_book_id: string
+          p_completed_at?: string
+          p_started_at?: string
+          p_status: string
+        }
+        Returns: string
+      }
+      change_user_book_status: {
+        Args: {
+          p_completed_at?: string
+          p_from_status: string
+          p_started_at?: string
+          p_to_status: string
+          p_user_book_id: string
+        }
+        Returns: boolean
+      }
       delete_my_account: { Args: never; Returns: undefined }
       fill_book_details: {
         Args: {
@@ -251,6 +270,14 @@ export type Database = {
           p_page_count?: number
         }
         Returns: undefined
+      }
+      update_reading_dates: {
+        Args: {
+          p_completed_at?: string
+          p_started_at?: string
+          p_user_book_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

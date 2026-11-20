@@ -35,9 +35,11 @@ export default async function BookDetailPage({ params }: PageProps<"/books/[id]"
 
   const book = userBook.books;
   const title = book?.title ?? "（タイトル不明）";
-  // 読了日の新しい順。読了日が無い行（未完了）は先頭
-  const histories = [...userBook.reading_histories].sort((a, b) =>
-    (b.completed_at ?? "9999").localeCompare(a.completed_at ?? "9999"),
+  // 読了日の新しい順。読了日が無い行（未完了）は先頭。同じ日に読了した行は、後から足した方を先に
+  const histories = [...userBook.reading_histories].sort(
+    (a, b) =>
+      (b.completed_at ?? "9999").localeCompare(a.completed_at ?? "9999") ||
+      (b.created_at ?? "").localeCompare(a.created_at ?? ""),
   );
   const meta = [book?.publisher, book?.published_date && formatDate(book.published_date)]
     .filter(Boolean)
